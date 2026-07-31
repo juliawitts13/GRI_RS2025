@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* GrupoSC brand palette, sampled from Identidade Visual (Relatório de Sustentabilidade 2025) */
+  --color-navy-950: #0b2c4d;
+  --color-navy-900: #114780;
+  --color-navy-800: #1a5595;
+  --color-navy-700: #24699f;
+  --color-navy-100: #e4ecf4;
+  --color-navy-50: #f2f6fa;
+
+  --color-orange-600: #d96a2c;
+  --color-orange-500: #ed7d3c;
+  --color-orange-100: #fce6d6;
+  --color-orange-50: #fdf2ea;
+
+  --color-pillar-ambiental: #097945;
+  --color-pillar-ambiental-100: #e0f2e8;
+  --color-pillar-social: #c1440e;
+  --color-pillar-social-100: #fbe4d8;
+  --color-pillar-governanca: #2e8fd6;
+  --color-pillar-governanca-100: #e2f0fb;
+  --color-pillar-geral: #5b6b7c;
+  --color-pillar-geral-100: #e9edf1;
+
+  --color-status-nao-iniciado: #8a97a3;
+  --color-status-em-andamento: #ed7d3c;
+  --color-status-aguardando: #2e8fd6;
+  --color-status-concluido: #097945;
+
+  --radius-card: 0.875rem;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+  body {
+    @apply bg-navy-50 text-navy-950 antialiased;
+    margin: 0;
+  }
+}
