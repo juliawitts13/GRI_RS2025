@@ -21,7 +21,7 @@ export function LoginPage() {
     setError(null)
     const { error } = await signIn(email, password)
     setLoading(false)
-    if (error) setError('E-mail ou senha inválidos.')
+    if (error) setError(error)
   }
 
   return (
