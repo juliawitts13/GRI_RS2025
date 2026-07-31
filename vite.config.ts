@@ -5,6 +5,7 @@ import path from 'node:path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/GRI_RS2025/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
