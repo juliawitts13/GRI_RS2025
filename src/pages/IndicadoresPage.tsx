@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Plus, Search, Upload, ClipboardList, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Search, Upload, ClipboardList, Pencil, Trash2, Users, X } from 'lucide-react'
 import { useIndicadores } from '@/hooks/useIndicadores'
 import { useAreas } from '@/hooks/useAreas'
 import { useRespondentes } from '@/hooks/useRespondentes'
@@ -13,11 +13,20 @@ import { STATUS_LABEL, STATUS_ORDER } from '@/lib/domain'
 import { formatarDataBr } from '@/lib/progress'
 import { IndicadorFormDialog } from '@/features/indicadores/IndicadorFormDialog'
 import { ImportDialog } from '@/features/indicadores/ImportDialog'
+import { BulkAssignDialog } from '@/features/indicadores/BulkAssignDialog'
+import { cn } from '@/lib/utils'
 import type { Indicador, StatusIndicador } from '@/types/db'
 
 export function IndicadoresPage() {
-  const { indicadores, loading, createIndicador, updateIndicador, deleteIndicador, upsertManyByCodigo } =
-    useIndicadores()
+  const {
+    indicadores,
+    loading,
+    createIndicador,
+    updateIndicador,
+    deleteIndicador,
+    upsertManyByCodigo,
+    updateManyIndicadores,
+  } = useIndicadores()
   const { areas } = useAreas()
   const { respondentes } = useRespondentes()
 
@@ -29,7 +38,9 @@ export function IndicadoresPage() {
 
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  const [bulkOpen, setBulkOpen] = useState(false)
   const [editing, setEditing] = useState<Indicador | null>(null)
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
 
   const areaNomePorId = useMemo(() => new Map(areas.map((a) => [a.id, a.nome])), [areas])
   const respondenteNomePorId = useMemo(() => new Map(respondentes.map((r) => [r.id, r.nome])), [respondentes])
@@ -47,6 +58,30 @@ export function IndicadoresPage() {
       return true
     })
   }, [indicadores, filtroArea, filtroStatus, filtroRespondente, filtroGri, busca])
+
+  const todosFiltradosSelecionados = filtrados.length > 0 && filtrados.every((i) => selecionados.has(i.id))
+
+  function toggleSelecionado(id: string) {
+    setSelecionados((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelecionarTodos() {
+    setSelecionados((prev) => {
+      if (todosFiltradosSelecionados) {
+        const next = new Set(prev)
+        for (const i of filtrados) next.delete(i.id)
+        return next
+      }
+      const next = new Set(prev)
+      for (const i of filtrados) next.add(i.id)
+      return next
+    })
+  }
 
   function openCreate() {
     setEditing(null)
@@ -132,6 +167,24 @@ export function IndicadoresPage() {
         </div>
       </Card>
 
+      {selecionados.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg bg-navy-900 px-4 py-3 text-white">
+          <span className="text-sm font-semibold">
+            {selecionados.size} indicador{selecionados.size === 1 ? '' : 'es'} selecionado
+            {selecionados.size === 1 ? '' : 's'}
+          </span>
+          <Button size="sm" onClick={() => setBulkOpen(true)}>
+            <Users size={14} /> Atribuir em lote
+          </Button>
+          <button
+            onClick={() => setSelecionados(new Set())}
+            className="ml-auto flex items-center gap-1 text-xs font-semibold text-white/70 hover:text-white"
+          >
+            <X size={14} /> Limpar seleção
+          </button>
+        </div>
+      )}
+
       {semDados ? (
         <EmptyState
           icon={<ClipboardList size={32} />}
@@ -151,48 +204,75 @@ export function IndicadoresPage() {
       ) : filtrados.length === 0 ? (
         <EmptyState title="Nenhum indicador corresponde aos filtros" description="Tente ajustar os filtros aplicados." />
       ) : (
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          {filtrados.map((ind) => (
-            <Card key={ind.id} className="flex flex-col gap-3 p-5">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-md bg-navy-900 px-2 py-0.5 font-mono text-xs font-bold text-white">
-                      {ind.codigo_gri}
-                    </span>
-                    <PillarBadge pilar={ind.pilar} />
-                  </div>
-                  <p className="mt-1.5 text-sm font-semibold leading-snug text-navy-950">{ind.titulo}</p>
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  <button onClick={() => openEdit(ind)} className="rounded-md p-1.5 text-navy-700 hover:bg-navy-100">
-                    <Pencil size={15} />
-                  </button>
-                  <button
-                    onClick={() => deleteIndicador(ind.id)}
-                    className="rounded-md p-1.5 text-pillar-social hover:bg-pillar-social-100"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-navy-100 pt-3 text-xs text-navy-700/80">
-                <span>
-                  <strong className="text-navy-950">Área:</strong>{' '}
-                  {ind.area_id ? areaNomePorId.get(ind.area_id) ?? '—' : '—'}
-                </span>
-                <span>
-                  <strong className="text-navy-950">Respondente:</strong>{' '}
-                  {ind.respondente_id ? respondenteNomePorId.get(ind.respondente_id) ?? '—' : '—'}
-                </span>
-                <span>
-                  <strong className="text-navy-950">Prazo:</strong> {formatarDataBr(ind.prazo)}
-                </span>
-              </div>
-              <StatusBadge status={ind.status} />
-            </Card>
-          ))}
-        </div>
+        <Card className="overflow-x-auto">
+          <table className="w-full min-w-[900px] text-left text-sm">
+            <thead className="bg-navy-50 text-xs font-semibold uppercase text-navy-700/70">
+              <tr>
+                <th className="w-10 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={todosFiltradosSelecionados}
+                    onChange={toggleSelecionarTodos}
+                    aria-label="Selecionar todos"
+                  />
+                </th>
+                <th className="px-3 py-3">Código</th>
+                <th className="px-3 py-3">Título</th>
+                <th className="px-3 py-3">Área</th>
+                <th className="px-3 py-3">Respondente</th>
+                <th className="px-3 py-3">Prazo</th>
+                <th className="px-3 py-3">Status</th>
+                <th className="w-20 px-3 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-navy-100">
+              {filtrados.map((ind) => (
+                <tr key={ind.id} className={cn('hover:bg-navy-50/50', selecionados.has(ind.id) && 'bg-orange-50/60')}>
+                  <td className="px-4 py-2.5">
+                    <input
+                      type="checkbox"
+                      checked={selecionados.has(ind.id)}
+                      onChange={() => toggleSelecionado(ind.id)}
+                      aria-label={`Selecionar ${ind.codigo_gri}`}
+                    />
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <div className="flex flex-col gap-1">
+                      <span className="w-fit rounded-md bg-navy-900 px-2 py-0.5 font-mono text-xs font-bold text-white">
+                        {ind.codigo_gri}
+                      </span>
+                      <PillarBadge pilar={ind.pilar} />
+                    </div>
+                  </td>
+                  <td className="max-w-xs px-3 py-2.5 font-medium text-navy-950">{ind.titulo}</td>
+                  <td className="px-3 py-2.5 text-navy-700/80">
+                    {ind.area_id ? areaNomePorId.get(ind.area_id) ?? '—' : '—'}
+                  </td>
+                  <td className="px-3 py-2.5 text-navy-700/80">
+                    {ind.respondente_id ? respondenteNomePorId.get(ind.respondente_id) ?? '—' : '—'}
+                  </td>
+                  <td className="px-3 py-2.5 text-navy-700/80">{formatarDataBr(ind.prazo)}</td>
+                  <td className="px-3 py-2.5">
+                    <StatusBadge status={ind.status} />
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <div className="flex justify-end gap-1">
+                      <button onClick={() => openEdit(ind)} className="rounded-md p-1.5 text-navy-700 hover:bg-navy-100">
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        onClick={() => deleteIndicador(ind.id)}
+                        className="rounded-md p-1.5 text-pillar-social hover:bg-pillar-social-100"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
       )}
 
       <IndicadorFormDialog
@@ -210,6 +290,17 @@ export function IndicadoresPage() {
         respondentes={respondentes}
         onImport={async (itens) => {
           await upsertManyByCodigo(itens)
+        }}
+      />
+      <BulkAssignDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        count={selecionados.size}
+        areas={areas}
+        respondentes={respondentes}
+        onApply={async (patch) => {
+          await updateManyIndicadores(Array.from(selecionados), patch)
+          setSelecionados(new Set())
         }}
       />
     </div>

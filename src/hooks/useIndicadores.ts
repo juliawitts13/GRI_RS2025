@@ -54,6 +54,15 @@ export function useIndicadores() {
     return { error: error?.message ?? null }
   }
 
+  async function updateManyIndicadores(ids: string[], patch: Partial<IndicadorInput>) {
+    const { error } = await supabase
+      .from('indicadores')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .in('id', ids)
+    if (!error) await refetch()
+    return { error: error?.message ?? null }
+  }
+
   return {
     indicadores,
     loading,
@@ -62,5 +71,6 @@ export function useIndicadores() {
     updateIndicador,
     deleteIndicador,
     upsertManyByCodigo,
+    updateManyIndicadores,
   }
 }
