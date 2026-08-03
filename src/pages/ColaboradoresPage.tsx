@@ -4,14 +4,22 @@ import { useRespondentes, type RespondenteInput } from '@/hooks/useRespondentes'
 import { useAreas } from '@/hooks/useAreas'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
 import { Dialog, DialogTitle } from '@/components/ui/Dialog'
 import { Input, Label, Select } from '@/components/ui/Input'
 import { EmptyState } from '@/components/ui/EmptyState'
 import type { Respondente } from '@/types/db'
 
-const EMPTY_FORM: RespondenteInput = { nome: '', email: '', area_id: null, ativo: true }
+const EMPTY_FORM: RespondenteInput = {
+  nome: '',
+  email: '',
+  area_id: null,
+  ativo: true,
+  eh_respondente: true,
+  eh_validador: false,
+}
 
-export function RespondentesPage() {
+export function ColaboradoresPage() {
   const { respondentes, loading, createRespondente, updateRespondente, deleteRespondente } = useRespondentes()
   const { areas } = useAreas()
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -29,7 +37,14 @@ export function RespondentesPage() {
 
   function openEdit(r: Respondente) {
     setEditing(r)
-    setForm({ nome: r.nome, email: r.email, area_id: r.area_id, ativo: r.ativo })
+    setForm({
+      nome: r.nome,
+      email: r.email,
+      area_id: r.area_id,
+      ativo: r.ativo,
+      eh_respondente: r.eh_respondente,
+      eh_validador: r.eh_validador,
+    })
     setDialogOpen(true)
   }
 
@@ -49,22 +64,24 @@ export function RespondentesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-navy-950">Respondentes</h1>
-          <p className="text-sm text-navy-700/70">Cadastro de quem responde cada indicador, por área.</p>
+          <h1 className="text-2xl font-extrabold text-navy-950">Colaboradores</h1>
+          <p className="text-sm text-navy-700/70">
+            Pessoas envolvidas na coleta, classificadas como respondente e/ou validador de cada área.
+          </p>
         </div>
         <Button onClick={openCreate}>
-          <Plus size={16} /> Novo respondente
+          <Plus size={16} /> Novo colaborador
         </Button>
       </div>
 
       {!loading && respondentes.length === 0 ? (
         <EmptyState
           icon={<Users size={32} />}
-          title="Nenhum respondente cadastrado"
-          description="Cadastre as pessoas designadas para responder os indicadores de cada área."
+          title="Nenhum colaborador cadastrado"
+          description="Cadastre as pessoas envolvidas na coleta e classifique cada uma como respondente e/ou validador."
           action={
             <Button onClick={openCreate}>
-              <Plus size={16} /> Cadastrar respondente
+              <Plus size={16} /> Cadastrar colaborador
             </Button>
           }
         />
@@ -76,6 +93,7 @@ export function RespondentesPage() {
                 <th className="px-5 py-3">Nome</th>
                 <th className="px-5 py-3">E-mail</th>
                 <th className="px-5 py-3">Área</th>
+                <th className="px-5 py-3">Papel</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3" />
               </tr>
@@ -87,6 +105,19 @@ export function RespondentesPage() {
                   <td className="px-5 py-3 text-navy-700/80">{r.email || '—'}</td>
                   <td className="px-5 py-3 text-navy-700/80">
                     {r.area_id ? areaNomePorId.get(r.area_id) ?? '—' : '—'}
+                  </td>
+                  <td className="px-5 py-3">
+                    <div className="flex flex-wrap gap-1.5">
+                      {r.eh_respondente && (
+                        <Badge className="bg-navy-100 text-navy-900">Respondente</Badge>
+                      )}
+                      {r.eh_validador && (
+                        <Badge className="bg-pillar-governanca-100 text-pillar-governanca">Validador</Badge>
+                      )}
+                      {!r.eh_respondente && !r.eh_validador && (
+                        <span className="text-xs text-navy-700/50">—</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-3">
                     <span
@@ -120,7 +151,7 @@ export function RespondentesPage() {
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogTitle>{editing ? 'Editar respondente' : 'Novo respondente'}</DialogTitle>
+        <DialogTitle>{editing ? 'Editar colaborador' : 'Novo colaborador'}</DialogTitle>
         <div className="flex flex-col gap-4">
           <div>
             <Label htmlFor="nome">Nome</Label>
@@ -150,13 +181,34 @@ export function RespondentesPage() {
               ))}
             </Select>
           </div>
+          <div>
+            <Label>Papel</Label>
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-navy-950">
+                <input
+                  type="checkbox"
+                  checked={form.eh_respondente}
+                  onChange={(e) => setForm({ ...form, eh_respondente: e.target.checked })}
+                />
+                Respondente (preenche fichas de indicadores)
+              </label>
+              <label className="flex items-center gap-2 text-sm font-medium text-navy-950">
+                <input
+                  type="checkbox"
+                  checked={form.eh_validador}
+                  onChange={(e) => setForm({ ...form, eh_validador: e.target.checked })}
+                />
+                Validador (aprova as respostas de uma área)
+              </label>
+            </div>
+          </div>
           <label className="flex items-center gap-2 text-sm font-medium text-navy-950">
             <input
               type="checkbox"
               checked={form.ativo}
               onChange={(e) => setForm({ ...form, ativo: e.target.checked })}
             />
-            Respondente ativo
+            Colaborador ativo
           </label>
           <Button onClick={handleSave} disabled={saving} className="mt-2">
             {saving ? 'Salvando...' : 'Salvar'}

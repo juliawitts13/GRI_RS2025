@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/indicadores', label: 'Coleta de Indicadores', icon: ClipboardList },
-  { to: '/respondentes', label: 'Respondentes', icon: Users },
+  { to: '/colaboradores', label: 'Colaboradores', icon: Users },
   { to: '/areas', label: 'Áreas', icon: Building2 },
 ]
 

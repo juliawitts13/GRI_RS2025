@@ -19,6 +19,8 @@ export type Respondente = {
   email: string | null
   area_id: string | null
   ativo: boolean
+  eh_respondente: boolean
+  eh_validador: boolean
   created_at: string
   updated_at: string
 }

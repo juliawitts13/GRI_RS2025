@@ -4,7 +4,7 @@ import { AppShell } from '@/layout/AppShell'
 import { LoginPage } from '@/pages/LoginPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { IndicadoresPage } from '@/pages/IndicadoresPage'
-import { RespondentesPage } from '@/pages/RespondentesPage'
+import { ColaboradoresPage } from '@/pages/ColaboradoresPage'
 import { AreasPage } from '@/pages/AreasPage'
 
 function ProtectedRoutes() {
@@ -25,7 +25,7 @@ function ProtectedRoutes() {
       <Route element={<AppShell />}>
         <Route index element={<DashboardPage />} />
         <Route path="indicadores" element={<IndicadoresPage />} />
-        <Route path="respondentes" element={<RespondentesPage />} />
+        <Route path="colaboradores" element={<ColaboradoresPage />} />
         <Route path="areas" element={<AreasPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

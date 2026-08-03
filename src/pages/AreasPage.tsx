@@ -21,13 +21,14 @@ export function AreasPage() {
   const respondentesPorArea = useMemo(() => {
     const map = new Map<string, typeof respondentes>()
     for (const r of respondentes) {
-      if (!r.area_id) continue
+      if (!r.area_id || !r.eh_respondente) continue
       if (!map.has(r.area_id)) map.set(r.area_id, [])
       map.get(r.area_id)!.push(r)
     }
     return map
   }, [respondentes])
 
+  const validadores = useMemo(() => respondentes.filter((r) => r.eh_validador), [respondentes])
   const respondenteNomePorId = useMemo(() => new Map(respondentes.map((r) => [r.id, r.nome])), [respondentes])
 
   function openCreate() {
@@ -140,12 +141,17 @@ export function AreasPage() {
                 <Label htmlFor="validador">Validador das respostas</Label>
                 <Select id="validador" value={validadorId} onChange={(e) => setValidadorId(e.target.value)}>
                   <option value="">Sem validador definido</option>
-                  {respondentes.map((r) => (
+                  {validadores.map((r) => (
                     <option key={r.id} value={r.id}>
                       {r.nome}
                     </option>
                   ))}
                 </Select>
+                {validadores.length === 0 && (
+                  <p className="mt-1 text-xs text-navy-700/60">
+                    Nenhum colaborador marcado como validador ainda — edite um em Colaboradores.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -154,7 +160,8 @@ export function AreasPage() {
                 </Label>
                 {respondentesDaAreaEditando.length === 0 ? (
                   <p className="text-sm text-navy-700/60">
-                    Nenhum respondente vinculado ainda. Cadastre em Respondentes e selecione esta área.
+                    Nenhum respondente vinculado ainda. Cadastre em Colaboradores, marque como respondente e
+                    selecione esta área.
                   </p>
                 ) : (
                   <ul className="flex flex-col gap-1.5">

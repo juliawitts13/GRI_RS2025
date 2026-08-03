@@ -7,6 +7,8 @@ export type RespondenteInput = {
   email: string | null
   area_id: string | null
   ativo: boolean
+  eh_respondente: boolean
+  eh_validador: boolean
 }
 
 export function useRespondentes() {

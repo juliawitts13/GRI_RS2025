@@ -117,9 +117,10 @@ export function IndicadorFormDialog({
     }
   }, [editing, open])
 
+  const respondentesElegiveis = respondentes.filter((r) => r.eh_respondente)
   const respondentesDaArea = form.area_id
-    ? respondentes.filter((r) => r.area_id === form.area_id)
-    : respondentes
+    ? respondentesElegiveis.filter((r) => r.area_id === form.area_id)
+    : respondentesElegiveis
 
   async function handleSave() {
     if (!form.codigo_gri.trim() || !form.titulo.trim()) return
