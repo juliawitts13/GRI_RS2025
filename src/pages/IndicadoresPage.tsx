@@ -227,8 +227,15 @@ export function IndicadoresPage() {
             </thead>
             <tbody className="divide-y divide-navy-100">
               {filtrados.map((ind) => (
-                <tr key={ind.id} className={cn('hover:bg-navy-50/50', selecionados.has(ind.id) && 'bg-orange-50/60')}>
-                  <td className="px-4 py-2.5">
+                <tr
+                  key={ind.id}
+                  onClick={() => openEdit(ind)}
+                  className={cn(
+                    'cursor-pointer hover:bg-navy-50/50',
+                    selecionados.has(ind.id) && 'bg-orange-50/60',
+                  )}
+                >
+                  <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={selecionados.has(ind.id)}
@@ -255,7 +262,7 @@ export function IndicadoresPage() {
                   <td className="px-3 py-2.5">
                     <StatusBadge status={ind.status} />
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
                       <button onClick={() => openEdit(ind)} className="rounded-md p-1.5 text-navy-700 hover:bg-navy-100">
                         <Pencil size={15} />

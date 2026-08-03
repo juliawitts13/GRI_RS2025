@@ -23,8 +23,8 @@ export function useAreas() {
     return { error: error?.message ?? null }
   }
 
-  async function updateArea(id: string, nome: string) {
-    const { error } = await supabase.from('areas').update({ nome }).eq('id', id)
+  async function updateArea(id: string, patch: { nome?: string; validador_id?: string | null }) {
+    const { error } = await supabase.from('areas').update(patch).eq('id', id)
     if (!error) await refetch()
     return { error: error?.message ?? null }
   }

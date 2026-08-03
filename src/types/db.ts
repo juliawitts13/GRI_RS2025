@@ -9,6 +9,7 @@ export type Pilar = 'geral' | 'economico' | 'ambiental' | 'social'
 export type Area = {
   id: string
   nome: string
+  validador_id: string | null
   created_at: string
 }
 
@@ -36,6 +37,14 @@ export type Indicador = {
   updated_at: string
 }
 
+export type IndicadorComentario = {
+  id: string
+  indicador_id: string
+  data: string
+  texto: string
+  criado_em: string
+}
+
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '13.0.5'
@@ -58,6 +67,12 @@ export type Database = {
         Row: Indicador
         Insert: Partial<Indicador> & { codigo_gri: string; titulo: string }
         Update: Partial<Indicador>
+        Relationships: []
+      }
+      indicador_comentarios: {
+        Row: IndicadorComentario
+        Insert: Partial<IndicadorComentario> & { indicador_id: string; texto: string }
+        Update: Partial<IndicadorComentario>
         Relationships: []
       }
     }

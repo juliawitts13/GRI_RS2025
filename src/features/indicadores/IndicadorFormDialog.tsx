@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
+import { MessageSquare, Trash2 } from 'lucide-react'
 import { Dialog, DialogTitle } from '@/components/ui/Dialog'
 import { Input, Label, Select, Textarea } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { STATUS_LABEL, STATUS_ORDER } from '@/lib/domain'
+import { formatarDataBr } from '@/lib/progress'
+import { useIndicadorComentarios } from '@/hooks/useIndicadorComentarios'
 import type { Area, Indicador, Respondente } from '@/types/db'
 import type { IndicadorInput } from '@/hooks/useIndicadores'
 
@@ -14,6 +17,70 @@ const EMPTY: IndicadorInput = {
   status: 'nao_iniciado',
   prazo: null,
   ficha_conteudo: null,
+}
+
+function hojeISO() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function HistoricoComentarios({ indicadorId }: { indicadorId: string }) {
+  const { comentarios, addComentario, deleteComentario } = useIndicadorComentarios(indicadorId)
+  const [data, setData] = useState(hojeISO())
+  const [texto, setTexto] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  async function handleAdd() {
+    if (!texto.trim()) return
+    setSaving(true)
+    await addComentario(data, texto.trim())
+    setSaving(false)
+    setTexto('')
+    setData(hojeISO())
+  }
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-navy-100 pt-4">
+      <Label className="flex items-center gap-1.5">
+        <MessageSquare size={13} /> Histórico de interação com o respondente
+      </Label>
+
+      <div className="flex flex-col gap-2 rounded-lg bg-navy-50 p-3">
+        <div className="flex gap-2">
+          <Input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-40" />
+        </div>
+        <Textarea
+          rows={2}
+          placeholder="Registrar uma interação, cobrança, dúvida respondida..."
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+        />
+        <Button size="sm" variant="outline" onClick={handleAdd} disabled={saving || !texto.trim()} className="self-end">
+          {saving ? 'Adicionando...' : 'Adicionar ao histórico'}
+        </Button>
+      </div>
+
+      {comentarios.length === 0 ? (
+        <p className="text-xs text-navy-700/60">Nenhum registro ainda.</p>
+      ) : (
+        <ul className="flex max-h-56 flex-col gap-2 overflow-y-auto">
+          {comentarios.map((c) => (
+            <li key={c.id} className="flex items-start justify-between gap-2 rounded-lg border border-navy-100 p-2.5">
+              <div>
+                <p className="text-xs font-semibold text-navy-700/70">{formatarDataBr(c.data)}</p>
+                <p className="text-sm text-navy-950">{c.texto}</p>
+              </div>
+              <button
+                onClick={() => deleteComentario(c.id)}
+                className="shrink-0 rounded-md p-1 text-pillar-social hover:bg-pillar-social-100"
+              >
+                <Trash2 size={13} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
 }
 
 export function IndicadorFormDialog({
@@ -64,7 +131,7 @@ export function IndicadorFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTitle>{editing ? `Editar ${editing.codigo_gri}` : 'Novo indicador'}</DialogTitle>
+      <DialogTitle>{editing ? `${editing.codigo_gri} — ${editing.titulo}` : 'Novo indicador'}</DialogTitle>
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -149,6 +216,8 @@ export function IndicadorFormDialog({
         <Button onClick={handleSave} disabled={saving} className="mt-1">
           {saving ? 'Salvando...' : 'Salvar'}
         </Button>
+
+        {editing && <HistoricoComentarios indicadorId={editing.id} />}
       </div>
     </Dialog>
   )
