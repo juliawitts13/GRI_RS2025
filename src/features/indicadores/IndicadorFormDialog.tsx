@@ -13,7 +13,6 @@ const EMPTY: IndicadorInput = {
   codigo_gri: '',
   titulo: '',
   area_id: null,
-  respondente_id: null,
   status: 'nao_iniciado',
   prazo: null,
   ficha_conteudo: null,
@@ -89,6 +88,7 @@ export function IndicadorFormDialog({
   editing,
   areas,
   respondentes,
+  respondenteIdsSelecionados,
   onSave,
 }: {
   open: boolean
@@ -96,9 +96,11 @@ export function IndicadorFormDialog({
   editing: Indicador | null
   areas: Area[]
   respondentes: Respondente[]
-  onSave: (input: IndicadorInput) => Promise<void>
+  respondenteIdsSelecionados: string[]
+  onSave: (input: IndicadorInput, respondenteIds: string[]) => Promise<void>
 }) {
   const [form, setForm] = useState<IndicadorInput>(EMPTY)
+  const [respondenteIds, setRespondenteIds] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -107,7 +109,6 @@ export function IndicadorFormDialog({
         codigo_gri: editing.codigo_gri,
         titulo: editing.titulo,
         area_id: editing.area_id,
-        respondente_id: editing.respondente_id,
         status: editing.status,
         prazo: editing.prazo,
         ficha_conteudo: editing.ficha_conteudo,
@@ -115,6 +116,8 @@ export function IndicadorFormDialog({
     } else {
       setForm(EMPTY)
     }
+    setRespondenteIds(respondenteIdsSelecionados)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing, open])
 
   const respondentesElegiveis = respondentes.filter((r) => r.eh_respondente)
@@ -122,10 +125,14 @@ export function IndicadorFormDialog({
     ? respondentesElegiveis.filter((r) => r.area_id === form.area_id)
     : respondentesElegiveis
 
+  function toggleRespondente(id: string) {
+    setRespondenteIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
   async function handleSave() {
     if (!form.codigo_gri.trim() || !form.titulo.trim()) return
     setSaving(true)
-    await onSave(form)
+    await onSave(form, respondenteIds)
     setSaving(false)
     onOpenChange(false)
   }
@@ -146,7 +153,7 @@ export function IndicadorFormDialog({
             />
           </div>
           <div>
-            <Label htmlFor="prazo">Prazo</Label>
+            <Label htmlFor="prazo">Data de entrega</Label>
             <Input
               id="prazo"
               type="date"
@@ -159,37 +166,39 @@ export function IndicadorFormDialog({
           <Label htmlFor="titulo">Título do indicador</Label>
           <Input id="titulo" value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="area">Área responsável</Label>
-            <Select
-              id="area"
-              value={form.area_id ?? ''}
-              onChange={(e) => setForm({ ...form, area_id: e.target.value || null, respondente_id: null })}
-            >
-              <option value="">Sem área</option>
-              {areas.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.nome}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="respondente">Respondente</Label>
-            <Select
-              id="respondente"
-              value={form.respondente_id ?? ''}
-              onChange={(e) => setForm({ ...form, respondente_id: e.target.value || null })}
-            >
-              <option value="">Sem respondente</option>
+        <div>
+          <Label htmlFor="area">Área responsável</Label>
+          <Select
+            id="area"
+            value={form.area_id ?? ''}
+            onChange={(e) => setForm({ ...form, area_id: e.target.value || null })}
+          >
+            <option value="">Sem área</option>
+            {areas.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.nome}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <Label>Respondentes (pode selecionar mais de um)</Label>
+          {respondentesDaArea.length === 0 ? (
+            <p className="text-sm text-navy-700/60">Nenhum colaborador com papel de respondente disponível.</p>
+          ) : (
+            <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
               {respondentesDaArea.map((r) => (
-                <option key={r.id} value={r.id}>
+                <label key={r.id} className="flex items-center gap-2 text-sm text-navy-950">
+                  <input
+                    type="checkbox"
+                    checked={respondenteIds.includes(r.id)}
+                    onChange={() => toggleRespondente(r.id)}
+                  />
                   {r.nome}
-                </option>
+                </label>
               ))}
-            </Select>
-          </div>
+            </div>
+          )}
         </div>
         <div>
           <Label htmlFor="status">Status</Label>

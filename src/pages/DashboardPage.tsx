@@ -75,12 +75,12 @@ export function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CalendarClock size={14} /> Próximos prazos
+              <CalendarClock size={14} /> Próximas entregas
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-3">
             {proximosPrazos.length === 0 ? (
-              <p className="text-sm text-navy-700/60">Nenhum prazo pendente cadastrado.</p>
+              <p className="text-sm text-navy-700/60">Nenhuma data de entrega pendente cadastrada.</p>
             ) : (
               <ul className="flex flex-col divide-y divide-navy-100">
                 {proximosPrazos.map(({ ind, dias }) => (

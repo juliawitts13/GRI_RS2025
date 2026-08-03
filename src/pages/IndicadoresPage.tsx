@@ -3,6 +3,7 @@ import { Plus, Search, Upload, ClipboardList, Pencil, Trash2, Users, X } from 'l
 import { useIndicadores } from '@/hooks/useIndicadores'
 import { useAreas } from '@/hooks/useAreas'
 import { useRespondentes } from '@/hooks/useRespondentes'
+import { useIndicadorRespondentes } from '@/hooks/useIndicadorRespondentes'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Input, Select } from '@/components/ui/Input'
@@ -29,6 +30,7 @@ export function IndicadoresPage() {
   } = useIndicadores()
   const { areas } = useAreas()
   const { respondentes } = useRespondentes()
+  const { respondenteIdsDoIndicador, definirRespondentes, adicionarRespondenteEmLote } = useIndicadorRespondentes()
 
   const [busca, setBusca] = useState('')
   const [filtroArea, setFiltroArea] = useState('')
@@ -49,7 +51,7 @@ export function IndicadoresPage() {
     return indicadores.filter((ind) => {
       if (filtroArea && ind.area_id !== filtroArea) return false
       if (filtroStatus && ind.status !== filtroStatus) return false
-      if (filtroRespondente && ind.respondente_id !== filtroRespondente) return false
+      if (filtroRespondente && !respondenteIdsDoIndicador(ind.id).includes(filtroRespondente)) return false
       if (filtroGri && !ind.codigo_gri.toLowerCase().includes(filtroGri.toLowerCase())) return false
       if (busca) {
         const alvo = `${ind.codigo_gri} ${ind.titulo}`.toLowerCase()
@@ -57,7 +59,8 @@ export function IndicadoresPage() {
       }
       return true
     })
-  }, [indicadores, filtroArea, filtroStatus, filtroRespondente, filtroGri, busca])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [indicadores, filtroArea, filtroStatus, filtroRespondente, filtroGri, busca, respondenteIdsDoIndicador])
 
   const todosFiltradosSelecionados = filtrados.length > 0 && filtrados.every((i) => selecionados.has(i.id))
 
@@ -93,11 +96,13 @@ export function IndicadoresPage() {
     setFormOpen(true)
   }
 
-  async function handleSave(input: Parameters<typeof createIndicador>[0]) {
+  async function handleSave(input: Parameters<typeof createIndicador>[0], respondenteIds: string[]) {
     if (editing) {
       await updateIndicador(editing.id, input)
+      await definirRespondentes(editing.id, respondenteIds)
     } else {
-      await createIndicador(input)
+      const { indicador } = await createIndicador(input)
+      if (indicador) await definirRespondentes(indicador.id, respondenteIds)
     }
   }
 
@@ -189,7 +194,7 @@ export function IndicadoresPage() {
         <EmptyState
           icon={<ClipboardList size={32} />}
           title="Nenhum indicador cadastrado ainda"
-          description="Importe a planilha de indicadores GRI (com área, respondente, status e prazo) ou cadastre um indicador manualmente."
+          description="Importe a planilha de indicadores GRI (com área, respondente, status e data de entrega) ou cadastre um indicador manualmente."
           action={
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setImportOpen(true)}>
@@ -219,64 +224,68 @@ export function IndicadoresPage() {
                 <th className="px-3 py-3">Código</th>
                 <th className="px-3 py-3">Título</th>
                 <th className="px-3 py-3">Área</th>
-                <th className="px-3 py-3">Respondente</th>
-                <th className="px-3 py-3">Prazo</th>
+                <th className="px-3 py-3">Respondentes</th>
+                <th className="px-3 py-3">Data de entrega</th>
                 <th className="px-3 py-3">Status</th>
                 <th className="w-20 px-3 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-navy-100">
-              {filtrados.map((ind) => (
-                <tr
-                  key={ind.id}
-                  onClick={() => openEdit(ind)}
-                  className={cn(
-                    'cursor-pointer hover:bg-navy-50/50',
-                    selecionados.has(ind.id) && 'bg-orange-50/60',
-                  )}
-                >
-                  <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={selecionados.has(ind.id)}
-                      onChange={() => toggleSelecionado(ind.id)}
-                      aria-label={`Selecionar ${ind.codigo_gri}`}
-                    />
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex flex-col gap-1">
-                      <span className="w-fit rounded-md bg-navy-900 px-2 py-0.5 font-mono text-xs font-bold text-white">
-                        {ind.codigo_gri}
-                      </span>
-                      <PillarBadge pilar={ind.pilar} />
-                    </div>
-                  </td>
-                  <td className="max-w-xs px-3 py-2.5 font-medium text-navy-950">{ind.titulo}</td>
-                  <td className="px-3 py-2.5 text-navy-700/80">
-                    {ind.area_id ? areaNomePorId.get(ind.area_id) ?? '—' : '—'}
-                  </td>
-                  <td className="px-3 py-2.5 text-navy-700/80">
-                    {ind.respondente_id ? respondenteNomePorId.get(ind.respondente_id) ?? '—' : '—'}
-                  </td>
-                  <td className="px-3 py-2.5 text-navy-700/80">{formatarDataBr(ind.prazo)}</td>
-                  <td className="px-3 py-2.5">
-                    <StatusBadge status={ind.status} />
-                  </td>
-                  <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex justify-end gap-1">
-                      <button onClick={() => openEdit(ind)} className="rounded-md p-1.5 text-navy-700 hover:bg-navy-100">
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        onClick={() => deleteIndicador(ind.id)}
-                        className="rounded-md p-1.5 text-pillar-social hover:bg-pillar-social-100"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filtrados.map((ind) => {
+                const nomesRespondentes = respondenteIdsDoIndicador(ind.id)
+                  .map((id) => respondenteNomePorId.get(id))
+                  .filter(Boolean)
+                  .join(', ')
+                return (
+                  <tr
+                    key={ind.id}
+                    onClick={() => openEdit(ind)}
+                    className={cn(
+                      'cursor-pointer hover:bg-navy-50/50',
+                      selecionados.has(ind.id) && 'bg-orange-50/60',
+                    )}
+                  >
+                    <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selecionados.has(ind.id)}
+                        onChange={() => toggleSelecionado(ind.id)}
+                        aria-label={`Selecionar ${ind.codigo_gri}`}
+                      />
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex flex-col gap-1">
+                        <span className="w-fit rounded-md bg-navy-900 px-2 py-0.5 font-mono text-xs font-bold text-white">
+                          {ind.codigo_gri}
+                        </span>
+                        <PillarBadge pilar={ind.pilar} />
+                      </div>
+                    </td>
+                    <td className="max-w-xs px-3 py-2.5 font-medium text-navy-950">{ind.titulo}</td>
+                    <td className="px-3 py-2.5 text-navy-700/80">
+                      {ind.area_id ? areaNomePorId.get(ind.area_id) ?? '—' : '—'}
+                    </td>
+                    <td className="px-3 py-2.5 text-navy-700/80">{nomesRespondentes || '—'}</td>
+                    <td className="px-3 py-2.5 text-navy-700/80">{formatarDataBr(ind.prazo)}</td>
+                    <td className="px-3 py-2.5">
+                      <StatusBadge status={ind.status} />
+                    </td>
+                    <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex justify-end gap-1">
+                        <button onClick={() => openEdit(ind)} className="rounded-md p-1.5 text-navy-700 hover:bg-navy-100">
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          onClick={() => deleteIndicador(ind.id)}
+                          className="rounded-md p-1.5 text-pillar-social hover:bg-pillar-social-100"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </Card>
@@ -288,6 +297,7 @@ export function IndicadoresPage() {
         editing={editing}
         areas={areas}
         respondentes={respondentes}
+        respondenteIdsSelecionados={editing ? respondenteIdsDoIndicador(editing.id) : []}
         onSave={handleSave}
       />
       <ImportDialog
@@ -296,7 +306,12 @@ export function IndicadoresPage() {
         areas={areas}
         respondentes={respondentes}
         onImport={async (itens) => {
-          await upsertManyByCodigo(itens)
+          const { indicadores: salvos } = await upsertManyByCodigo(itens.map((i) => i.input))
+          const idPorCodigo = new Map(salvos.map((s) => [s.codigo_gri, s.id]))
+          for (const item of itens) {
+            const id = idPorCodigo.get(item.input.codigo_gri)
+            if (id) await definirRespondentes(id, item.respondenteIds)
+          }
         }}
       />
       <BulkAssignDialog
@@ -305,8 +320,10 @@ export function IndicadoresPage() {
         count={selecionados.size}
         areas={areas}
         respondentes={respondentes}
-        onApply={async (patch) => {
-          await updateManyIndicadores(Array.from(selecionados), patch)
+        onApply={async (patch, respondenteIdParaAdicionar) => {
+          const ids = Array.from(selecionados)
+          if (Object.keys(patch).length > 0) await updateManyIndicadores(ids, patch)
+          if (respondenteIdParaAdicionar) await adicionarRespondenteEmLote(ids, respondenteIdParaAdicionar)
           setSelecionados(new Set())
         }}
       />

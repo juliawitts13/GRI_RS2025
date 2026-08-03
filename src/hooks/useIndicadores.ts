@@ -6,7 +6,6 @@ export type IndicadorInput = {
   codigo_gri: string
   titulo: string
   area_id: string | null
-  respondente_id: string | null
   status: StatusIndicador
   prazo: string | null
   ficha_conteudo: string | null
@@ -28,9 +27,9 @@ export function useIndicadores() {
   }, [refetch])
 
   async function createIndicador(input: IndicadorInput) {
-    const { error } = await supabase.from('indicadores').insert(input)
+    const { data, error } = await supabase.from('indicadores').insert(input).select().single()
     if (!error) await refetch()
-    return { error: error?.message ?? null }
+    return { error: error?.message ?? null, indicador: data as Indicador | null }
   }
 
   async function updateIndicador(id: string, input: Partial<IndicadorInput>) {
@@ -49,9 +48,12 @@ export function useIndicadores() {
   }
 
   async function upsertManyByCodigo(inputs: IndicadorInput[]) {
-    const { error } = await supabase.from('indicadores').upsert(inputs, { onConflict: 'codigo_gri' })
+    const { data, error } = await supabase
+      .from('indicadores')
+      .upsert(inputs, { onConflict: 'codigo_gri' })
+      .select()
     if (!error) await refetch()
-    return { error: error?.message ?? null }
+    return { error: error?.message ?? null, indicadores: (data as Indicador[] | null) ?? [] }
   }
 
   async function updateManyIndicadores(ids: string[], patch: Partial<IndicadorInput>) {

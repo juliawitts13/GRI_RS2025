@@ -7,6 +7,7 @@ import type { Area, Respondente, StatusIndicador } from '@/types/db'
 import type { IndicadorInput } from '@/hooks/useIndicadores'
 
 const NAO_ALTERAR = '__nao_alterar__'
+const NAO_ADICIONAR = '__nao_adicionar__'
 
 export function BulkAssignDialog({
   open,
@@ -21,19 +22,21 @@ export function BulkAssignDialog({
   count: number
   areas: Area[]
   respondentes: Respondente[]
-  onApply: (patch: Partial<IndicadorInput>) => Promise<void>
+  onApply: (patch: Partial<IndicadorInput>, respondenteIdParaAdicionar: string | null) => Promise<void>
 }) {
   const [areaId, setAreaId] = useState(NAO_ALTERAR)
-  const [respondenteId, setRespondenteId] = useState(NAO_ALTERAR)
+  const [respondenteId, setRespondenteId] = useState(NAO_ADICIONAR)
   const [status, setStatus] = useState(NAO_ALTERAR)
   const [prazo, setPrazo] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const respondentesDaArea = areaId !== NAO_ALTERAR ? respondentes.filter((r) => r.area_id === areaId) : respondentes
+  const respondentesElegiveis = respondentes.filter((r) => r.eh_respondente)
+  const respondentesDaArea =
+    areaId !== NAO_ALTERAR && areaId !== '' ? respondentesElegiveis.filter((r) => r.area_id === areaId) : respondentesElegiveis
 
   function reset() {
     setAreaId(NAO_ALTERAR)
-    setRespondenteId(NAO_ALTERAR)
+    setRespondenteId(NAO_ADICIONAR)
     setStatus(NAO_ALTERAR)
     setPrazo('')
   }
@@ -41,12 +44,12 @@ export function BulkAssignDialog({
   async function handleApply() {
     const patch: Partial<IndicadorInput> = {}
     if (areaId !== NAO_ALTERAR) patch.area_id = areaId || null
-    if (respondenteId !== NAO_ALTERAR) patch.respondente_id = respondenteId || null
     if (status !== NAO_ALTERAR) patch.status = status as StatusIndicador
     if (prazo) patch.prazo = prazo
-    if (Object.keys(patch).length === 0) return
+    const respondenteIdParaAdicionar = respondenteId !== NAO_ADICIONAR ? respondenteId : null
+    if (Object.keys(patch).length === 0 && !respondenteIdParaAdicionar) return
     setSaving(true)
-    await onApply(patch)
+    await onApply(patch, respondenteIdParaAdicionar)
     setSaving(false)
     reset()
     onOpenChange(false)
@@ -64,7 +67,8 @@ export function BulkAssignDialog({
       <div className="flex flex-col gap-4">
         <p className="text-sm text-navy-700/70">
           Só os campos que você alterar aqui serão aplicados aos indicadores selecionados — o resto permanece como
-          está.
+          está. Um indicador pode ter mais de um respondente: o escolhido abaixo é adicionado, sem remover quem já
+          estava atribuído.
         </p>
         <div>
           <Label htmlFor="bulk-area">Área responsável</Label>
@@ -73,7 +77,7 @@ export function BulkAssignDialog({
             value={areaId}
             onChange={(e) => {
               setAreaId(e.target.value)
-              setRespondenteId(NAO_ALTERAR)
+              setRespondenteId(NAO_ADICIONAR)
             }}
           >
             <option value={NAO_ALTERAR}>Não alterar</option>
@@ -86,10 +90,9 @@ export function BulkAssignDialog({
           </Select>
         </div>
         <div>
-          <Label htmlFor="bulk-respondente">Respondente</Label>
+          <Label htmlFor="bulk-respondente">Adicionar respondente</Label>
           <Select id="bulk-respondente" value={respondenteId} onChange={(e) => setRespondenteId(e.target.value)}>
-            <option value={NAO_ALTERAR}>Não alterar</option>
-            <option value="">Sem respondente</option>
+            <option value={NAO_ADICIONAR}>Não adicionar</option>
             {respondentesDaArea.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.nome}
@@ -109,7 +112,7 @@ export function BulkAssignDialog({
           </Select>
         </div>
         <div>
-          <Label htmlFor="bulk-prazo">Prazo</Label>
+          <Label htmlFor="bulk-prazo">Data de entrega</Label>
           <Input id="bulk-prazo" type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} />
         </div>
         <Button onClick={handleApply} disabled={saving} className="mt-1">

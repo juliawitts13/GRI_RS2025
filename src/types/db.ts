@@ -31,7 +31,6 @@ export type Indicador = {
   titulo: string
   pilar: Pilar
   area_id: string | null
-  respondente_id: string | null
   status: StatusIndicador
   prazo: string | null
   ficha_conteudo: string | null
@@ -45,6 +44,13 @@ export type IndicadorComentario = {
   data: string
   texto: string
   criado_em: string
+}
+
+export type IndicadorRespondente = {
+  id: string
+  indicador_id: string
+  respondente_id: string
+  created_at: string
 }
 
 export type Database = {
@@ -75,6 +81,12 @@ export type Database = {
         Row: IndicadorComentario
         Insert: Partial<IndicadorComentario> & { indicador_id: string; texto: string }
         Update: Partial<IndicadorComentario>
+        Relationships: []
+      }
+      indicador_respondentes: {
+        Row: IndicadorRespondente
+        Insert: Partial<IndicadorRespondente> & { indicador_id: string; respondente_id: string }
+        Update: Partial<IndicadorRespondente>
         Relationships: []
       }
     }

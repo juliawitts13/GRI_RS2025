@@ -15,9 +15,9 @@ const HEADER_ALIASES: Record<string, string[]> = {
   codigo_gri: ['codigo gri', 'codigo', 'indicador gri', 'gri', 'codigo do indicador'],
   titulo: ['titulo', 'titulo do indicador', 'descricao', 'nome do indicador'],
   area: ['area', 'area responsavel', 'departamento'],
-  respondente: ['respondente', 'pessoa respondente', 'responsavel'],
+  respondente: ['respondente', 'respondentes', 'pessoa respondente', 'responsavel'],
   status: ['status', 'situacao'],
-  prazo: ['prazo', 'data limite', 'deadline'],
+  prazo: ['prazo', 'data de entrega', 'data limite', 'deadline'],
 }
 
 const STATUS_ALIASES: Record<string, StatusIndicador> = {
@@ -69,8 +69,13 @@ function parsePrazo(raw: string | number | undefined): string | null {
   return null
 }
 
+export interface ImportItem {
+  input: IndicadorInput
+  respondenteIds: string[]
+}
+
 export interface ImportResult {
-  itens: IndicadorInput[]
+  itens: ImportItem[]
   avisos: string[]
 }
 
@@ -106,13 +111,13 @@ export async function parseIndicadoresFile(
   const areaPorNome = new Map(contexto.areas.map((a) => [normalizeKey(a.nome), a.id]))
   const respondentePorNome = new Map(contexto.respondentes.map((r) => [normalizeKey(r.nome), r.id]))
 
-  const itens: IndicadorInput[] = []
+  const itens: ImportItem[] = []
   rows.forEach((row, i) => {
     const codigo = String(row[headerMap.codigo_gri] ?? '').trim()
     if (!codigo) return
     const titulo = headerMap.titulo !== undefined ? String(row[headerMap.titulo] ?? '').trim() : ''
     const areaNome = headerMap.area !== undefined ? String(row[headerMap.area] ?? '').trim() : ''
-    const respondenteNome =
+    const respondentesTexto =
       headerMap.respondente !== undefined ? String(row[headerMap.respondente] ?? '').trim() : ''
 
     let areaId: string | null = null
@@ -120,21 +125,28 @@ export async function parseIndicadoresFile(
       areaId = areaPorNome.get(normalizeKey(areaNome)) ?? null
       if (!areaId) avisos.push(`Linha ${i + 2}: área "${areaNome}" não encontrada — deixei sem área.`)
     }
-    let respondenteId: string | null = null
-    if (respondenteNome) {
-      respondenteId = respondentePorNome.get(normalizeKey(respondenteNome)) ?? null
-      if (!respondenteId)
-        avisos.push(`Linha ${i + 2}: respondente "${respondenteNome}" não encontrado — deixei sem respondente.`)
+
+    const respondenteIds: string[] = []
+    if (respondentesTexto) {
+      for (const nomeBruto of respondentesTexto.split(/[,;]/)) {
+        const nome = nomeBruto.trim()
+        if (!nome) continue
+        const id = respondentePorNome.get(normalizeKey(nome))
+        if (id) respondenteIds.push(id)
+        else avisos.push(`Linha ${i + 2}: respondente "${nome}" não encontrado — ignorado.`)
+      }
     }
 
     itens.push({
-      codigo_gri: codigo,
-      titulo: titulo || codigo,
-      area_id: areaId,
-      respondente_id: respondenteId,
-      status: parseStatus(headerMap.status !== undefined ? String(row[headerMap.status] ?? '') : undefined),
-      prazo: parsePrazo(headerMap.prazo !== undefined ? (row[headerMap.prazo] as string | number) : undefined),
-      ficha_conteudo: null,
+      input: {
+        codigo_gri: codigo,
+        titulo: titulo || codigo,
+        area_id: areaId,
+        status: parseStatus(headerMap.status !== undefined ? String(row[headerMap.status] ?? '') : undefined),
+        prazo: parsePrazo(headerMap.prazo !== undefined ? (row[headerMap.prazo] as string | number) : undefined),
+        ficha_conteudo: null,
+      },
+      respondenteIds,
     })
   })
 
