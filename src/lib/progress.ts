@@ -23,3 +23,16 @@ export function diasAteVencer(iso: string | null | undefined): number | null {
   const prazo = new Date(iso + 'T00:00:00')
   return Math.round((prazo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
 }
+
+export function hojeISO(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+/** Dias corridos desde uma data (positivo = no passado). */
+export function diasDesde(iso: string | null | undefined): number | null {
+  if (!iso) return null
+  const hoje = new Date()
+  hoje.setHours(0, 0, 0, 0)
+  const data = new Date(iso + 'T00:00:00')
+  return Math.round((hoje.getTime() - data.getTime()) / (1000 * 60 * 60 * 24))
+}
