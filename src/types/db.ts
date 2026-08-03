@@ -36,21 +36,6 @@ export type Indicador = {
   updated_at: string
 }
 
-export type CronogramaTarefa = {
-  id: string
-  fase: string
-  tarefa: string
-  nivel: number
-  pessoas: string | null
-  status: string | null
-  duracao_dias: number | null
-  data_inicio: string | null
-  data_fim: string | null
-  depende_de: string | null
-  ordem: number
-  created_at: string
-}
-
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '13.0.5'
@@ -73,12 +58,6 @@ export type Database = {
         Row: Indicador
         Insert: Partial<Indicador> & { codigo_gri: string; titulo: string }
         Update: Partial<Indicador>
-        Relationships: []
-      }
-      cronograma_tarefas: {
-        Row: CronogramaTarefa
-        Insert: Partial<CronogramaTarefa> & { fase: string; tarefa: string; ordem: number }
-        Update: Partial<CronogramaTarefa>
         Relationships: []
       }
     }

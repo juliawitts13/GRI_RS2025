@@ -23,11 +23,17 @@ export function useAreas() {
     return { error: error?.message ?? null }
   }
 
+  async function updateArea(id: string, nome: string) {
+    const { error } = await supabase.from('areas').update({ nome }).eq('id', id)
+    if (!error) await refetch()
+    return { error: error?.message ?? null }
+  }
+
   async function deleteArea(id: string) {
     const { error } = await supabase.from('areas').delete().eq('id', id)
     if (!error) await refetch()
     return { error: error?.message ?? null }
   }
 
-  return { areas, loading, refetch, createArea, deleteArea }
+  return { areas, loading, refetch, createArea, updateArea, deleteArea }
 }

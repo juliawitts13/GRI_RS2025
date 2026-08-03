@@ -1,20 +1,20 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarClock, ClipboardList, TrendingUp } from 'lucide-react'
+import { CalendarClock, ClipboardList, Building2 } from 'lucide-react'
 import { useIndicadores } from '@/hooks/useIndicadores'
-import { useCronograma } from '@/hooks/useCronograma'
+import { useAreas } from '@/hooks/useAreas'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { StatusBadge } from '@/components/domain/StatusBadge'
 import { STATUS_LABEL, STATUS_ORDER, STATUS_COLOR } from '@/lib/domain'
-import { calcularProgressoGeral, diasAteVencer, formatarDataBr, PROJETO_FIM, PROJETO_INICIO } from '@/lib/progress'
+import { calcularProgressoGeral, diasAteVencer, formatarDataBr } from '@/lib/progress'
 import { cn } from '@/lib/utils'
 
 export function DashboardPage() {
   const { indicadores } = useIndicadores()
-  const { tarefas } = useCronograma()
+  const { areas } = useAreas()
 
-  const progresso = calcularProgressoGeral()
+  const progresso = calcularProgressoGeral(indicadores)
 
   const contagemStatus = useMemo(() => {
     const base: Record<string, number> = Object.fromEntries(STATUS_ORDER.map((s) => [s, 0]))
@@ -30,24 +30,21 @@ export function DashboardPage() {
       .slice(0, 6)
   }, [indicadores])
 
-  const fasesResumo = useMemo(() => {
-    const grupos = new Map<string, { total: number; feito: number; inicio: string; fim: string }>()
-    for (const t of tarefas) {
-      if (t.nivel !== 0) continue
-      const g = grupos.get(t.fase) ?? { total: 0, feito: 0, inicio: t.data_inicio ?? '', fim: t.data_fim ?? '' }
-      g.total++
-      if (t.status === 'Feito') g.feito++
-      if (t.data_inicio && t.data_inicio < g.inicio) g.inicio = t.data_inicio
-      if (t.data_fim && t.data_fim > g.fim) g.fim = t.data_fim
-      grupos.set(t.fase, g)
-    }
-    return Array.from(grupos.entries())
-  }, [tarefas])
+  const resumoPorArea = useMemo(() => {
+    const semArea = indicadores.filter((i) => !i.area_id).length
+    const porArea = areas.map((a) => {
+      const doArea = indicadores.filter((i) => i.area_id === a.id)
+      const concluidos = doArea.filter((i) => i.status === 'concluido').length
+      return { nome: a.nome, total: doArea.length, concluidos }
+    })
+    if (semArea > 0) porArea.push({ nome: 'Sem área definida', total: semArea, concluidos: 0 })
+    return porArea
+  }, [indicadores, areas])
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-navy-950">Visão geral do projeto</h1>
+        <h1 className="text-2xl font-extrabold text-navy-950">Visão geral da coleta</h1>
         <p className="text-sm text-navy-700/70">Relatório de Sustentabilidade 2025 — GrupoSC</p>
       </div>
 
@@ -58,8 +55,7 @@ export function DashboardPage() {
             <p className="text-4xl font-extrabold md:text-5xl">{progresso}%</p>
           </div>
           <p className="text-right text-xs text-white/60">
-            {formatarDataBr(PROJETO_INICIO.toISOString().slice(0, 10))} até{' '}
-            {formatarDataBr(PROJETO_FIM.toISOString().slice(0, 10))}
+            {contagemStatus.concluido} de {indicadores.length} indicadores concluídos
           </p>
         </div>
         <ProgressBar value={progresso} trackClassName="bg-white/15" className="h-4" />
@@ -108,21 +104,25 @@ export function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp size={14} /> Fases do cronograma
+              <Building2 size={14} /> Indicadores por área
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 pt-3">
-            {fasesResumo.map(([fase, g]) => (
-              <div key={fase}>
-                <div className="mb-1 flex justify-between text-xs font-semibold text-navy-950">
-                  <span>{fase}</span>
-                  <span className="text-navy-700/60">
-                    {g.feito}/{g.total}
-                  </span>
+            {resumoPorArea.length === 0 ? (
+              <p className="text-sm text-navy-700/60">Nenhuma área cadastrada ainda.</p>
+            ) : (
+              resumoPorArea.map((a) => (
+                <div key={a.nome}>
+                  <div className="mb-1 flex justify-between text-xs font-semibold text-navy-950">
+                    <span>{a.nome}</span>
+                    <span className="text-navy-700/60">
+                      {a.concluidos}/{a.total}
+                    </span>
+                  </div>
+                  <ProgressBar value={a.total ? (a.concluidos / a.total) * 100 : 0} className="h-1.5" />
                 </div>
-                <ProgressBar value={g.total ? (g.feito / g.total) * 100 : 0} className="h-1.5" />
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
       </div>

@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ClipboardList, Users, CalendarRange, LogOut } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Users, Building2, LogOut } from 'lucide-react'
 import { Logo } from '@/components/domain/Logo'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/indicadores', label: 'Coleta de Indicadores', icon: ClipboardList },
   { to: '/respondentes', label: 'Respondentes', icon: Users },
-  { to: '/cronograma', label: 'Cronograma', icon: CalendarRange },
+  { to: '/areas', label: 'Áreas', icon: Building2 },
 ]
 
 export function AppShell() {

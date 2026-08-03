@@ -34,13 +34,3 @@ export const PILAR_COLOR: Record<Pilar, { bg: string; text: string }> = {
   ambiental: { bg: 'bg-pillar-ambiental-100', text: 'text-pillar-ambiental' },
   social: { bg: 'bg-pillar-social-100', text: 'text-pillar-social' },
 }
-
-/** Status textual do cronograma (linha do Cronograma.xlsx), separado do status do indicador. */
-export function cronogramaStatusColor(status: string | null) {
-  if (!status) return 'bg-status-nao-iniciado'
-  if (status.includes('Feito') && !status.includes(',')) return 'bg-status-concluido'
-  if (status.includes('Em Andamento')) return 'bg-status-em-andamento'
-  if (status === 'Não Iniciado') return 'bg-status-nao-iniciado'
-  // linhas-pai com status combinado (ex: "Feito, Não Iniciado") contam como em andamento
-  return 'bg-status-em-andamento'
-}

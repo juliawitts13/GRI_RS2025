@@ -13,11 +13,10 @@ const EMPTY_FORM: RespondenteInput = { nome: '', email: '', area_id: null, ativo
 
 export function RespondentesPage() {
   const { respondentes, loading, createRespondente, updateRespondente, deleteRespondente } = useRespondentes()
-  const { areas, createArea } = useAreas()
+  const { areas } = useAreas()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Respondente | null>(null)
   const [form, setForm] = useState<RespondenteInput>(EMPTY_FORM)
-  const [novaArea, setNovaArea] = useState('')
   const [saving, setSaving] = useState(false)
 
   const areaNomePorId = useMemo(() => new Map(areas.map((a) => [a.id, a.nome])), [areas])
@@ -46,12 +45,6 @@ export function RespondentesPage() {
     setDialogOpen(false)
   }
 
-  async function handleAddArea() {
-    if (!novaArea.trim()) return
-    await createArea(novaArea.trim())
-    setNovaArea('')
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -63,29 +56,6 @@ export function RespondentesPage() {
           <Plus size={16} /> Novo respondente
         </Button>
       </div>
-
-      <Card className="p-5">
-        <p className="mb-2 text-sm font-semibold text-navy-950">Áreas cadastradas</p>
-        <div className="mb-3 flex flex-wrap gap-2">
-          {areas.map((a) => (
-            <span key={a.id} className="rounded-full bg-navy-50 px-3 py-1 text-xs font-semibold text-navy-900">
-              {a.nome}
-            </span>
-          ))}
-          {areas.length === 0 && <span className="text-xs text-navy-700/60">Nenhuma área cadastrada ainda.</span>}
-        </div>
-        <div className="flex max-w-sm gap-2">
-          <Input
-            placeholder="Nome da nova área"
-            value={novaArea}
-            onChange={(e) => setNovaArea(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddArea()}
-          />
-          <Button variant="outline" onClick={handleAddArea}>
-            Adicionar
-          </Button>
-        </div>
-      </Card>
 
       {!loading && respondentes.length === 0 ? (
         <EmptyState

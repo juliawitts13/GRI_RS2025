@@ -1,16 +1,13 @@
-/** Datas fixas do projeto, extraídas do Cronograma.xlsx (fase "Preparação" até "Entrega do Relatório"). */
-export const PROJETO_INICIO = new Date('2026-01-28T00:00:00')
-export const PROJETO_FIM = new Date('2026-12-08T00:00:00')
+import type { Indicador } from '@/types/db'
 
 /**
- * Progresso geral por linha do tempo: (hoje − início) / (fim − início), 0-100.
- * Decisão de negócio confirmada com a Júlia — não usa contagem de status manual.
+ * Progresso geral = % de indicadores com status 'concluido'.
+ * Decisão de negócio confirmada com a Júlia após remover o módulo de Cronograma.
  */
-export function calcularProgressoGeral(hoje: Date = new Date()): number {
-  const total = PROJETO_FIM.getTime() - PROJETO_INICIO.getTime()
-  const decorrido = hoje.getTime() - PROJETO_INICIO.getTime()
-  const pct = (decorrido / total) * 100
-  return Math.min(100, Math.max(0, Math.round(pct)))
+export function calcularProgressoGeral(indicadores: Indicador[]): number {
+  if (indicadores.length === 0) return 0
+  const concluidos = indicadores.filter((i) => i.status === 'concluido').length
+  return Math.round((concluidos / indicadores.length) * 100)
 }
 
 export function formatarDataBr(iso: string | null | undefined): string {

@@ -5,7 +5,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { IndicadoresPage } from '@/pages/IndicadoresPage'
 import { RespondentesPage } from '@/pages/RespondentesPage'
-import { CronogramaPage } from '@/pages/CronogramaPage'
+import { AreasPage } from '@/pages/AreasPage'
 
 function ProtectedRoutes() {
   const { session, loading } = useAuth()
@@ -26,7 +26,7 @@ function ProtectedRoutes() {
         <Route index element={<DashboardPage />} />
         <Route path="indicadores" element={<IndicadoresPage />} />
         <Route path="respondentes" element={<RespondentesPage />} />
-        <Route path="cronograma" element={<CronogramaPage />} />
+        <Route path="areas" element={<AreasPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
