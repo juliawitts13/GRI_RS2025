@@ -4,6 +4,7 @@ export const STATUS_ORDER: StatusIndicador[] = [
   'nao_iniciado',
   'em_andamento',
   'aguardando_validacao',
+  'devolvido_area',
   'concluido',
 ]
 
@@ -11,6 +12,7 @@ export const STATUS_LABEL: Record<StatusIndicador, string> = {
   nao_iniciado: 'Não iniciado',
   em_andamento: 'Em andamento',
   aguardando_validacao: 'Validação Consultoria',
+  devolvido_area: 'Devolvido à área',
   concluido: 'Concluído',
 }
 
@@ -18,8 +20,12 @@ export const STATUS_COLOR: Record<StatusIndicador, { bg: string; text: string; d
   nao_iniciado: { bg: 'bg-status-nao-iniciado/10', text: 'text-status-nao-iniciado', dot: 'bg-status-nao-iniciado' },
   em_andamento: { bg: 'bg-status-em-andamento/10', text: 'text-orange-600', dot: 'bg-status-em-andamento' },
   aguardando_validacao: { bg: 'bg-status-aguardando/10', text: 'text-status-aguardando', dot: 'bg-status-aguardando' },
+  devolvido_area: { bg: 'bg-status-devolvido/10', text: 'text-status-devolvido', dot: 'bg-status-devolvido' },
   concluido: { bg: 'bg-status-concluido/10', text: 'text-status-concluido', dot: 'bg-status-concluido' },
 }
+
+/** Status que contam como "preenchido" pela área para fins de progresso, mesmo sem estar concluído. */
+export const STATUS_PREENCHIDO: StatusIndicador[] = ['aguardando_validacao', 'concluido']
 
 export const PILAR_LABEL: Record<Pilar, string> = {
   geral: 'Geral',

@@ -2,6 +2,7 @@ export type StatusIndicador =
   | 'nao_iniciado'
   | 'em_andamento'
   | 'aguardando_validacao'
+  | 'devolvido_area'
   | 'concluido'
 
 export type Pilar = 'geral' | 'economico' | 'ambiental' | 'social'

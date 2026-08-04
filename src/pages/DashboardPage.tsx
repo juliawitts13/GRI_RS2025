@@ -6,7 +6,7 @@ import { useAreas } from '@/hooks/useAreas'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { StatusBadge } from '@/components/domain/StatusBadge'
-import { STATUS_LABEL, STATUS_ORDER, STATUS_COLOR } from '@/lib/domain'
+import { STATUS_LABEL, STATUS_ORDER, STATUS_COLOR, STATUS_PREENCHIDO } from '@/lib/domain'
 import { calcularProgressoGeral, diasAteVencer, formatarDataBr } from '@/lib/progress'
 import { cn } from '@/lib/utils'
 
@@ -34,10 +34,10 @@ export function DashboardPage() {
     const semArea = indicadores.filter((i) => !i.area_id).length
     const porArea = areas.map((a) => {
       const doArea = indicadores.filter((i) => i.area_id === a.id)
-      const concluidos = doArea.filter((i) => i.status === 'concluido').length
-      return { nome: a.nome, total: doArea.length, concluidos }
+      const preenchidos = doArea.filter((i) => STATUS_PREENCHIDO.includes(i.status)).length
+      return { nome: a.nome, total: doArea.length, preenchidos }
     })
-    if (semArea > 0) porArea.push({ nome: 'Sem área definida', total: semArea, concluidos: 0 })
+    if (semArea > 0) porArea.push({ nome: 'Sem área definida', total: semArea, preenchidos: 0 })
     return porArea
   }, [indicadores, areas])
 
@@ -61,7 +61,7 @@ export function DashboardPage() {
         <ProgressBar value={progresso} trackClassName="bg-white/15" className="h-4" />
       </Card>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {STATUS_ORDER.map((s) => (
           <Card key={s} className="p-4">
             <p className={cn('mb-1 h-1.5 w-8 rounded-full', STATUS_COLOR[s].dot)} />
@@ -90,7 +90,10 @@ export function DashboardPage() {
                         {ind.codigo_gri} · {ind.titulo}
                       </p>
                       <p className="text-xs text-navy-700/60">
-                        {formatarDataBr(ind.prazo)} {dias !== null && (dias < 0 ? `(${-dias}d atrasado)` : `(em ${dias}d)`)}
+                        {formatarDataBr(ind.prazo)}{' '}
+                        {dias !== null &&
+                          ind.status !== 'aguardando_validacao' &&
+                          (dias < 0 ? `(${-dias}d atrasado)` : `(em ${dias}d)`)}
                       </p>
                     </div>
                     <StatusBadge status={ind.status} />
@@ -116,10 +119,10 @@ export function DashboardPage() {
                   <div className="mb-1 flex justify-between text-xs font-semibold text-navy-950">
                     <span>{a.nome}</span>
                     <span className="text-navy-700/60">
-                      {a.concluidos}/{a.total}
+                      {a.preenchidos}/{a.total}
                     </span>
                   </div>
-                  <ProgressBar value={a.total ? (a.concluidos / a.total) * 100 : 0} className="h-1.5" />
+                  <ProgressBar value={a.total ? (a.preenchidos / a.total) * 100 : 0} className="h-1.5" />
                 </div>
               ))
             )}

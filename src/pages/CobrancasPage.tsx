@@ -40,7 +40,9 @@ export function CobrancasPage() {
     return grupos
       .map(({ area, inds }) => {
         const pendentes = inds.filter((i) => i.status !== 'concluido')
-        const atrasados = pendentes.filter((i) => i.prazo && i.prazo < hoje)
+        const atrasados = pendentes.filter(
+          (i) => i.prazo && i.prazo < hoje && i.status !== 'aguardando_validacao',
+        )
         const idsInds = new Set(inds.map((i) => i.id))
         const comentariosArea = comentarios.filter((c) => idsInds.has(c.indicador_id))
         const ultimaData = comentariosArea[0]?.data ?? null

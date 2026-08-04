@@ -28,6 +28,8 @@
   --color-status-nao-iniciado: #8a97a3;
   --color-status-em-andamento: #ed7d3c;
   --color-status-aguardando: #2e8fd6;
+  --color-status-devolvido: #d92d2d;
+  --color-status-devolvido-100: #fbe0e0;
   --color-status-concluido: #097945;
 
   --radius-card: 0.875rem;
