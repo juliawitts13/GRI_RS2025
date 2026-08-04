@@ -26,6 +26,8 @@ const STATUS_ALIASES: Record<string, StatusIndicador> = {
   'em andamento': 'em_andamento',
   'aguardando validacao': 'aguardando_validacao',
   'aguardando validação': 'aguardando_validacao',
+  'validacao consultoria': 'aguardando_validacao',
+  'validação consultoria': 'aguardando_validacao',
   concluido: 'concluido',
   'concluído': 'concluido',
   feito: 'concluido',
