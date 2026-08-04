@@ -33,6 +33,8 @@ export type Indicador = {
   area_id: string | null
   status: StatusIndicador
   prazo: string | null
+  expectativa_entrega: string | null
+  vencimento: string | null
   ficha_conteudo: string | null
   created_at: string
   updated_at: string

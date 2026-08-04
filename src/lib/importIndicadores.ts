@@ -18,6 +18,8 @@ const HEADER_ALIASES: Record<string, string[]> = {
   respondente: ['respondente', 'respondentes', 'pessoa respondente', 'responsavel'],
   status: ['status', 'situacao'],
   prazo: ['prazo', 'data de entrega', 'data limite', 'deadline'],
+  expectativa_entrega: ['expectativa de entrega', 'expectativa'],
+  vencimento: ['vencimento', 'data de vencimento'],
 }
 
 const STATUS_ALIASES: Record<string, StatusIndicador> = {
@@ -72,7 +74,7 @@ function parsePrazo(raw: string | number | undefined): string | null {
 }
 
 export interface ImportItem {
-  input: IndicadorInput
+  input: Partial<IndicadorInput> & { codigo_gri: string; titulo: string }
   respondenteIds: string[]
 }
 
@@ -139,17 +141,23 @@ export async function parseIndicadoresFile(
       }
     }
 
-    itens.push({
-      input: {
-        codigo_gri: codigo,
-        titulo: titulo || codigo,
-        area_id: areaId,
-        status: parseStatus(headerMap.status !== undefined ? String(row[headerMap.status] ?? '') : undefined),
-        prazo: parsePrazo(headerMap.prazo !== undefined ? (row[headerMap.prazo] as string | number) : undefined),
-        ficha_conteudo: null,
-      },
-      respondenteIds,
-    })
+    const input: ImportItem['input'] = {
+      codigo_gri: codigo,
+      titulo: titulo || codigo,
+      area_id: areaId,
+      status: parseStatus(headerMap.status !== undefined ? String(row[headerMap.status] ?? '') : undefined),
+      prazo: parsePrazo(headerMap.prazo !== undefined ? (row[headerMap.prazo] as string | number) : undefined),
+      ficha_conteudo: null,
+    }
+    // só inclui expectativa/vencimento se a planilha tiver essas colunas, pra não apagar valores já definidos no app
+    if (headerMap.expectativa_entrega !== undefined) {
+      input.expectativa_entrega = parsePrazo(row[headerMap.expectativa_entrega] as string | number)
+    }
+    if (headerMap.vencimento !== undefined) {
+      input.vencimento = parsePrazo(row[headerMap.vencimento] as string | number)
+    }
+
+    itens.push({ input, respondenteIds })
   })
 
   return { itens, avisos }

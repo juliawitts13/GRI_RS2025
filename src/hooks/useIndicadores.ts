@@ -8,6 +8,8 @@ export type IndicadorInput = {
   area_id: string | null
   status: StatusIndicador
   prazo: string | null
+  expectativa_entrega: string | null
+  vencimento: string | null
   ficha_conteudo: string | null
 }
 
@@ -47,7 +49,7 @@ export function useIndicadores() {
     return { error: error?.message ?? null }
   }
 
-  async function upsertManyByCodigo(inputs: IndicadorInput[]) {
+  async function upsertManyByCodigo(inputs: (Partial<IndicadorInput> & { codigo_gri: string; titulo: string })[]) {
     const { data, error } = await supabase
       .from('indicadores')
       .upsert(inputs, { onConflict: 'codigo_gri' })

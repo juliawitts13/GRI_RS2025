@@ -15,6 +15,8 @@ const EMPTY: IndicadorInput = {
   area_id: null,
   status: 'nao_iniciado',
   prazo: null,
+  expectativa_entrega: null,
+  vencimento: null,
   ficha_conteudo: null,
 }
 
@@ -111,6 +113,8 @@ export function IndicadorFormDialog({
         area_id: editing.area_id,
         status: editing.status,
         prazo: editing.prazo,
+        expectativa_entrega: editing.expectativa_entrega,
+        vencimento: editing.vencimento,
         ficha_conteudo: editing.ficha_conteudo,
       })
     } else {
@@ -159,6 +163,26 @@ export function IndicadorFormDialog({
               type="date"
               value={form.prazo ?? ''}
               onChange={(e) => setForm({ ...form, prazo: e.target.value || null })}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="expectativa">Expectativa de entrega</Label>
+            <Input
+              id="expectativa"
+              type="date"
+              value={form.expectativa_entrega ?? ''}
+              onChange={(e) => setForm({ ...form, expectativa_entrega: e.target.value || null })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="vencimento">Vencimento</Label>
+            <Input
+              id="vencimento"
+              type="date"
+              value={form.vencimento ?? ''}
+              onChange={(e) => setForm({ ...form, vencimento: e.target.value || null })}
             />
           </div>
         </div>

@@ -44,8 +44,9 @@ export function ImportDialog({
       <div className="flex flex-col gap-4">
         <p className="text-sm text-navy-700/80">
           A planilha deve ter colunas como <strong>Código GRI</strong>, Título, Área, Respondente(s), Status e Data
-          de entrega. Para mais de um respondente, separe os nomes por vírgula na mesma célula. Indicadores
-          existentes (mesmo código) são atualizados; novos são criados.
+          de entrega. Colunas de Expectativa de entrega e Vencimento são opcionais — se não existirem na planilha,
+          os valores já cadastrados no app não são alterados. Para mais de um respondente, separe os nomes por
+          vírgula na mesma célula. Indicadores existentes (mesmo código) são atualizados; novos são criados.
         </p>
         <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-navy-100 px-6 py-10 text-center hover:border-orange-500">
           <UploadCloud className="text-navy-700/50" size={28} />
