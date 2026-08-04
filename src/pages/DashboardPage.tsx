@@ -1,20 +1,25 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarClock, ClipboardList, Building2 } from 'lucide-react'
+import { Users, ClipboardList, Building2 } from 'lucide-react'
 import { useIndicadores } from '@/hooks/useIndicadores'
 import { useAreas } from '@/hooks/useAreas'
+import { useRespondentes } from '@/hooks/useRespondentes'
+import { useIndicadorRespondentes } from '@/hooks/useIndicadorRespondentes'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
-import { StatusBadge } from '@/components/domain/StatusBadge'
-import { STATUS_LABEL, STATUS_ORDER, STATUS_COLOR, STATUS_PREENCHIDO } from '@/lib/domain'
-import { calcularProgressoGeral, diasAteVencer, formatarDataBr } from '@/lib/progress'
+import { STATUS_ORDER, STATUS_COLOR, STATUS_LABEL, STATUS_PREENCHIDO } from '@/lib/domain'
+import { calcularProgressoGeral } from '@/lib/progress'
 import { cn } from '@/lib/utils'
 
 export function DashboardPage() {
   const { indicadores } = useIndicadores()
   const { areas } = useAreas()
+  const { respondentes } = useRespondentes()
+  const { respondenteIdsDoIndicador } = useIndicadorRespondentes()
 
   const progresso = calcularProgressoGeral(indicadores)
+
+  const respondenteNomePorId = useMemo(() => new Map(respondentes.map((r) => [r.id, r.nome])), [respondentes])
 
   const contagemStatus = useMemo(() => {
     const base: Record<string, number> = Object.fromEntries(STATUS_ORDER.map((s) => [s, 0]))
@@ -22,13 +27,23 @@ export function DashboardPage() {
     return base
   }, [indicadores])
 
-  const proximosPrazos = useMemo(() => {
-    return indicadores
-      .filter((i) => i.prazo && i.status !== 'concluido')
-      .map((i) => ({ ind: i, dias: diasAteVencer(i.prazo) }))
-      .sort((a, b) => (a.dias ?? 0) - (b.dias ?? 0))
-      .slice(0, 6)
-  }, [indicadores])
+  const resumoPorRespondente = useMemo(() => {
+    const contagem = new Map<string, { total: number; preenchidos: number }>()
+    for (const ind of indicadores) {
+      for (const rid of respondenteIdsDoIndicador(ind.id)) {
+        const atual = contagem.get(rid) ?? { total: 0, preenchidos: 0 }
+        atual.total++
+        if (STATUS_PREENCHIDO.includes(ind.status)) atual.preenchidos++
+        contagem.set(rid, atual)
+      }
+    }
+    const maxTotal = Math.max(1, ...Array.from(contagem.values()).map((c) => c.total))
+    return Array.from(contagem.entries())
+      .map(([id, c]) => ({ nome: respondenteNomePorId.get(id) ?? '—', maxTotal, ...c }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 8)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [indicadores, respondenteIdsDoIndicador, respondenteNomePorId])
 
   const resumoPorArea = useMemo(() => {
     const semArea = indicadores.filter((i) => !i.area_id).length
@@ -75,31 +90,25 @@ export function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CalendarClock size={14} /> Próximas entregas
+              <Users size={14} /> Indicadores por respondente
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-3">
-            {proximosPrazos.length === 0 ? (
-              <p className="text-sm text-navy-700/60">Nenhuma data de entrega pendente cadastrada.</p>
+          <CardContent className="flex flex-col gap-3 pt-3">
+            {resumoPorRespondente.length === 0 ? (
+              <p className="text-sm text-navy-700/60">Nenhum respondente com indicador atribuído ainda.</p>
             ) : (
-              <ul className="flex flex-col divide-y divide-navy-100">
-                {proximosPrazos.map(({ ind, dias }) => (
-                  <li key={ind.id} className="flex items-center justify-between gap-2 py-2.5">
-                    <div>
-                      <p className="text-sm font-semibold text-navy-950">
-                        {ind.codigo_gri} · {ind.titulo}
-                      </p>
-                      <p className="text-xs text-navy-700/60">
-                        {formatarDataBr(ind.prazo)}{' '}
-                        {dias !== null &&
-                          ind.status !== 'aguardando_validacao' &&
-                          (dias < 0 ? `(${-dias}d atrasado)` : `(em ${dias}d)`)}
-                      </p>
-                    </div>
-                    <StatusBadge status={ind.status} />
-                  </li>
-                ))}
-              </ul>
+              resumoPorRespondente.map((r) => (
+                <div key={r.nome}>
+                  <div className="mb-1 flex justify-between text-xs font-semibold text-navy-950">
+                    <span>{r.nome}</span>
+                    <span className="text-navy-700/60">
+                      {r.total} indicador{r.total === 1 ? '' : 'es'} · {r.preenchidos} preenchido
+                      {r.preenchidos === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <ProgressBar value={(r.total / r.maxTotal) * 100} className="h-1.5" />
+                </div>
+              ))
             )}
           </CardContent>
         </Card>
