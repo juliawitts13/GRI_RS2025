@@ -2,16 +2,37 @@ import { useMemo, useState } from 'react'
 import { Plus, Trash2, Building2, Users } from 'lucide-react'
 import { useAreas } from '@/hooks/useAreas'
 import { useRespondentes } from '@/hooks/useRespondentes'
+import { useIndicadores } from '@/hooks/useIndicadores'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Badge'
 import { Dialog, DialogTitle } from '@/components/ui/Dialog'
 import { Input, Label, Select } from '@/components/ui/Input'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { cn } from '@/lib/utils'
 import type { Area } from '@/types/db'
+
+function AndamentoAreaBadge({ total, iniciados }: { total: number; iniciados: number }) {
+  if (total === 0) {
+    return (
+      <Badge className="bg-navy-100 text-navy-700/70">
+        <span className="h-1.5 w-1.5 rounded-full bg-navy-700/40" /> Sem indicadores
+      </Badge>
+    )
+  }
+  const iniciado = iniciados > 0
+  return (
+    <Badge className={cn(iniciado ? 'bg-status-concluido/10 text-status-concluido' : 'bg-status-nao-iniciado/10 text-status-nao-iniciado')}>
+      <span className={cn('h-1.5 w-1.5 rounded-full', iniciado ? 'bg-status-concluido' : 'bg-status-nao-iniciado')} />
+      {iniciado ? 'Já iniciou' : 'Ainda não iniciou'}
+    </Badge>
+  )
+}
 
 export function AreasPage() {
   const { areas, loading, createArea, updateArea, deleteArea } = useAreas()
   const { respondentes } = useRespondentes()
+  const { indicadores } = useIndicadores()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Area | null>(null)
   const [nome, setNome] = useState('')
@@ -27,6 +48,18 @@ export function AreasPage() {
     }
     return map
   }, [respondentes])
+
+  const andamentoPorArea = useMemo(() => {
+    const map = new Map<string, { total: number; iniciados: number }>()
+    for (const ind of indicadores) {
+      if (!ind.area_id) continue
+      const atual = map.get(ind.area_id) ?? { total: 0, iniciados: 0 }
+      atual.total++
+      if (ind.status !== 'nao_iniciado') atual.iniciados++
+      map.set(ind.area_id, atual)
+    }
+    return map
+  }, [indicadores])
 
   const validadores = useMemo(() => respondentes.filter((r) => r.eh_validador), [respondentes])
   const respondenteNomePorId = useMemo(() => new Map(respondentes.map((r) => [r.id, r.nome])), [respondentes])
@@ -92,6 +125,7 @@ export function AreasPage() {
                 <th className="px-5 py-3">Nome</th>
                 <th className="px-5 py-3">Respondentes</th>
                 <th className="px-5 py-3">Validador</th>
+                <th className="px-5 py-3">Andamento</th>
                 <th className="px-5 py-3" />
               </tr>
             </thead>
@@ -102,6 +136,12 @@ export function AreasPage() {
                   <td className="px-5 py-3 text-navy-700/80">{respondentesPorArea.get(a.id)?.length ?? 0}</td>
                   <td className="px-5 py-3 text-navy-700/80">
                     {a.validador_id ? respondenteNomePorId.get(a.validador_id) ?? '—' : '—'}
+                  </td>
+                  <td className="px-5 py-3">
+                    <AndamentoAreaBadge
+                      total={andamentoPorArea.get(a.id)?.total ?? 0}
+                      iniciados={andamentoPorArea.get(a.id)?.iniciados ?? 0}
+                    />
                   </td>
                   <td className="px-5 py-3 text-right">
                     <button
