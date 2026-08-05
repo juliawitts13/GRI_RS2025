@@ -74,7 +74,7 @@ export function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-navy-950">Central da Coleta de Indicadores</h1>
+        <h1 className="text-2xl font-extrabold text-navy-950">Dashboard</h1>
         <p className="text-sm text-navy-700/70">Relatório de Sustentabilidade 2025 — GrupoSC</p>
       </div>
 
