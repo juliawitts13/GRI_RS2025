@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Plus, Search, Upload, ClipboardList, Pencil, Trash2, Users, X } from 'lucide-react'
+import { Plus, Search, Upload, ClipboardList, Pencil, Trash2, Users, X, ChevronDown, ChevronUp, LayoutGrid, List } from 'lucide-react'
 import { useIndicadores } from '@/hooks/useIndicadores'
 import { useAreas } from '@/hooks/useAreas'
 import { useRespondentes } from '@/hooks/useRespondentes'
@@ -21,6 +21,36 @@ import { ImportDialog } from '@/features/indicadores/ImportDialog'
 import { BulkAssignDialog } from '@/features/indicadores/BulkAssignDialog'
 import { cn } from '@/lib/utils'
 import type { Indicador, StatusIndicador } from '@/types/db'
+
+type CategoriaNorma = 'universais' | 'setoriais' | 'tematicas'
+
+const CATEGORIA_ORDER: CategoriaNorma[] = ['universais', 'setoriais', 'tematicas']
+
+const CATEGORIA_INFO: Record<CategoriaNorma, { nome: string; legenda: string }> = {
+  universais: { nome: 'Normas Universais', legenda: 'Aplique todas as três Normas Universais em seu relato.' },
+  setoriais: { nome: 'Normas Setoriais', legenda: 'Use as Normas Setoriais que se aplicarem ao seu setor.' },
+  tematicas: {
+    nome: 'Normas Temáticas',
+    legenda: 'Selecione Normas Temáticas para relatar informações específicas aos seus temas materiais.',
+  },
+}
+
+function prefixoNumerico(codigoGri: string): number {
+  const n = parseInt(codigoGri.split('-')[0], 10)
+  return Number.isNaN(n) ? 0 : n
+}
+
+function sufixoNumerico(codigoGri: string): number {
+  const n = parseInt(codigoGri.split('-')[1] ?? '0', 10)
+  return Number.isNaN(n) ? 0 : n
+}
+
+function categoriaDoCodigo(codigoGri: string): CategoriaNorma {
+  const prefixo = prefixoNumerico(codigoGri)
+  if (prefixo <= 3) return 'universais'
+  if (prefixo >= 11 && prefixo <= 19) return 'setoriais'
+  return 'tematicas'
+}
 
 export function IndicadoresPage() {
   const {
@@ -52,6 +82,10 @@ export function IndicadoresPage() {
   const [editing, setEditing] = useState<Indicador | null>(null)
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
 
+  const [visao, setVisao] = useState<'normas' | 'lista'>('normas')
+  const [categoriaAberta, setCategoriaAberta] = useState<CategoriaNorma | null>('tematicas')
+  const [normaSelecionada, setNormaSelecionada] = useState<number | null>(null)
+
   const areaNomePorId = useMemo(() => new Map(areas.map((a) => [a.id, a.nome])), [areas])
   const respondenteNomePorId = useMemo(() => new Map(respondentes.map((r) => [r.id, r.nome])), [respondentes])
 
@@ -69,6 +103,31 @@ export function IndicadoresPage() {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [indicadores, filtroArea, filtroStatus, filtroRespondente, filtroGri, busca, respondenteIdsDoIndicador])
+
+  const porCategoria = useMemo(() => {
+    const mapa: Record<CategoriaNorma, Map<number, Indicador[]>> = {
+      universais: new Map(),
+      setoriais: new Map(),
+      tematicas: new Map(),
+    }
+    for (const ind of filtrados) {
+      const categoria = categoriaDoCodigo(ind.codigo_gri)
+      const norma = prefixoNumerico(ind.codigo_gri)
+      if (!mapa[categoria].has(norma)) mapa[categoria].set(norma, [])
+      mapa[categoria].get(norma)!.push(ind)
+    }
+    for (const mapaNormas of Object.values(mapa)) {
+      for (const itens of mapaNormas.values()) {
+        itens.sort((a, b) => sufixoNumerico(a.codigo_gri) - sufixoNumerico(b.codigo_gri))
+      }
+    }
+    return mapa
+  }, [filtrados])
+
+  function toggleCategoria(categoria: CategoriaNorma) {
+    setCategoriaAberta((prev) => (prev === categoria ? null : categoria))
+    setNormaSelecionada(null)
+  }
 
   const todosFiltradosSelecionados = filtrados.length > 0 && filtrados.every((i) => selecionados.has(i.id))
 
@@ -137,6 +196,26 @@ export function IndicadoresPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <div className="flex rounded-lg border border-navy-100 p-0.5">
+            <button
+              onClick={() => setVisao('normas')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+                visao === 'normas' ? 'bg-navy-900 text-white' : 'text-navy-700 hover:bg-navy-50',
+              )}
+            >
+              <LayoutGrid size={14} /> Por normas GRI
+            </button>
+            <button
+              onClick={() => setVisao('lista')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+                visao === 'lista' ? 'bg-navy-900 text-white' : 'text-navy-700 hover:bg-navy-50',
+              )}
+            >
+              <List size={14} /> Lista
+            </button>
+          </div>
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Upload size={16} /> Importar planilha
           </Button>
@@ -191,7 +270,7 @@ export function IndicadoresPage() {
         </div>
       </Card>
 
-      {selecionados.size > 0 && (
+      {visao === 'lista' && selecionados.size > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg bg-navy-900 px-4 py-3 text-white">
           <span className="text-sm font-semibold">
             {selecionados.size} indicador{selecionados.size === 1 ? '' : 'es'} selecionado
@@ -227,6 +306,87 @@ export function IndicadoresPage() {
         />
       ) : filtrados.length === 0 ? (
         <EmptyState title="Nenhum indicador corresponde aos filtros" description="Tente ajustar os filtros aplicados." />
+      ) : visao === 'normas' ? (
+        <div className="flex flex-col gap-3">
+          {CATEGORIA_ORDER.map((categoria) => {
+            const normas = porCategoria[categoria]
+            const totalCategoria = Array.from(normas.values()).reduce((acc, itens) => acc + itens.length, 0)
+            const aberta = categoriaAberta === categoria
+            const normasOrdenadas = Array.from(normas.keys()).sort((a, b) => a - b)
+
+            return (
+              <Card key={categoria} className="overflow-hidden">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => toggleCategoria(categoria)}
+                  onKeyDown={(e) => e.key === 'Enter' && toggleCategoria(categoria)}
+                  className="flex w-full cursor-pointer items-center justify-between gap-3 p-4 text-left"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-navy-950">{CATEGORIA_INFO[categoria].nome}</p>
+                    <p className="text-xs text-navy-700/60">
+                      {totalCategoria} indicador{totalCategoria === 1 ? '' : 'es'} · {normas.size} norma
+                      {normas.size === 1 ? '' : 's'}
+                    </p>
+                  </div>
+                  {aberta ? <ChevronUp size={18} className="text-navy-700/50" /> : <ChevronDown size={18} className="text-navy-700/50" />}
+                </div>
+
+                {aberta && (
+                  <div className="border-t border-navy-100 px-4 pb-5 pt-4">
+                    <p className="mb-3 text-xs text-navy-700/60">{CATEGORIA_INFO[categoria].legenda}</p>
+                    {normasOrdenadas.length === 0 ? (
+                      <p className="text-sm text-navy-700/60">Nenhum indicador nesta categoria ainda.</p>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                        {normasOrdenadas.map((norma) => {
+                          const itens = normas.get(norma)!
+                          const selecionada = normaSelecionada === norma
+                          return (
+                            <button
+                              key={norma}
+                              onClick={() => setNormaSelecionada(selecionada ? null : norma)}
+                              className={cn(
+                                'rounded-lg border p-3 text-left transition-colors',
+                                selecionada ? 'border-orange-500 bg-orange-50' : 'border-navy-100 hover:bg-navy-50',
+                              )}
+                            >
+                              <p className="font-mono text-sm font-bold text-navy-950">GRI {norma}</p>
+                              <p className="text-xs text-navy-700/60">
+                                {itens.length} indicador{itens.length === 1 ? '' : 'es'}
+                              </p>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {normaSelecionada !== null && normas.has(normaSelecionada) && (
+                      <div className="mt-4 flex flex-col gap-1.5 border-t border-navy-100 pt-4">
+                        {normas.get(normaSelecionada)!.map((ind) => (
+                          <div
+                            key={ind.id}
+                            onClick={() => openEdit(ind)}
+                            className="flex cursor-pointer items-center justify-between gap-2 rounded-lg bg-navy-50 px-3 py-2 text-sm hover:bg-navy-100"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="rounded-md bg-navy-900 px-2 py-0.5 font-mono text-xs font-bold text-white">
+                                {ind.codigo_gri}
+                              </span>
+                              <span className="font-medium text-navy-950">{ind.titulo}</span>
+                            </div>
+                            <StatusBadge status={ind.status} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Card>
+            )
+          })}
+        </div>
       ) : (
         <Card className="overflow-x-auto">
           <table className="w-full min-w-[900px] text-left text-sm">
