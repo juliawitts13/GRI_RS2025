@@ -229,7 +229,7 @@ export function IndicadoresPage() {
         <EmptyState title="Nenhum indicador corresponde aos filtros" description="Tente ajustar os filtros aplicados." />
       ) : (
         <Card className="overflow-x-auto">
-          <table className="w-full min-w-[1150px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="bg-navy-50 text-xs font-semibold uppercase text-navy-700/70">
               <tr>
                 <th className="w-10 px-4 py-3">
@@ -244,8 +244,6 @@ export function IndicadoresPage() {
                 <th className="px-3 py-3">Título</th>
                 <th className="px-3 py-3">Área</th>
                 <th className="px-3 py-3">Respondentes</th>
-                <th className="px-3 py-3">Data de entrega</th>
-                <th className="px-3 py-3">Expectativa de entrega</th>
                 <th className="px-3 py-3">Vencimento</th>
                 <th className="px-3 py-3">Status</th>
                 <th className="w-20 px-3 py-3" />
@@ -287,8 +285,6 @@ export function IndicadoresPage() {
                       {ind.area_id ? areaNomePorId.get(ind.area_id) ?? '—' : '—'}
                     </td>
                     <td className="px-3 py-2.5 text-navy-700/80">{nomesRespondentes || '—'}</td>
-                    <td className="px-3 py-2.5 text-navy-700/80">{formatarDataBr(ind.prazo)}</td>
-                    <td className="px-3 py-2.5 text-navy-700/80">{formatarDataBr(ind.expectativa_entrega)}</td>
                     <td className="px-3 py-2.5 text-navy-700/80">{formatarDataBr(ind.vencimento)}</td>
                     <td className="px-3 py-2.5">
                       <StatusBadge status={ind.status} />
