@@ -99,6 +99,31 @@ export type CapituloTopico = {
   created_at: string
 }
 
+export type Ods = {
+  id: number
+  numero: number
+  nome: string
+}
+
+export type TemaMaterialOds = {
+  id: string
+  tema_material_id: string
+  ods_id: number
+  created_at: string
+}
+
+export type StatusProjeto = 'nao_iniciado' | 'em_andamento' | 'concluido'
+
+export type Projeto = {
+  id: string
+  tema_material_id: string
+  nome: string
+  status: StatusProjeto
+  descricao: string | null
+  created_at: string
+  updated_at: string
+}
+
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '13.0.5'
@@ -169,6 +194,24 @@ export type Database = {
         Row: CapituloTopico
         Insert: Partial<CapituloTopico> & { capitulo_id: string; texto: string }
         Update: Partial<CapituloTopico>
+        Relationships: []
+      }
+      ods: {
+        Row: Ods
+        Insert: Partial<Ods> & { id: number; numero: number; nome: string }
+        Update: Partial<Ods>
+        Relationships: []
+      }
+      tema_material_ods: {
+        Row: TemaMaterialOds
+        Insert: Partial<TemaMaterialOds> & { tema_material_id: string; ods_id: number }
+        Update: Partial<TemaMaterialOds>
+        Relationships: []
+      }
+      projetos: {
+        Row: Projeto
+        Insert: Partial<Projeto> & { tema_material_id: string; nome: string }
+        Update: Partial<Projeto>
         Relationships: []
       }
     }

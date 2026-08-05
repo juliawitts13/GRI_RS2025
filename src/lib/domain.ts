@@ -1,4 +1,4 @@
-import type { Pilar, StatusIndicador } from '@/types/db'
+import type { Pilar, StatusIndicador, StatusProjeto } from '@/types/db'
 
 export const STATUS_ORDER: StatusIndicador[] = [
   'nao_iniciado',
@@ -26,6 +26,20 @@ export const STATUS_COLOR: Record<StatusIndicador, { bg: string; text: string; d
 
 /** Status que contam como "preenchido" pela área para fins de progresso, mesmo sem estar concluído. */
 export const STATUS_PREENCHIDO: StatusIndicador[] = ['aguardando_validacao', 'concluido']
+
+export const STATUS_PROJETO_ORDER: StatusProjeto[] = ['nao_iniciado', 'em_andamento', 'concluido']
+
+export const STATUS_PROJETO_LABEL: Record<StatusProjeto, string> = {
+  nao_iniciado: 'Não iniciado',
+  em_andamento: 'Em andamento',
+  concluido: 'Concluído',
+}
+
+export const STATUS_PROJETO_COLOR: Record<StatusProjeto, { bg: string; text: string; dot: string }> = {
+  nao_iniciado: { bg: 'bg-status-nao-iniciado/10', text: 'text-status-nao-iniciado', dot: 'bg-status-nao-iniciado' },
+  em_andamento: { bg: 'bg-status-em-andamento/10', text: 'text-orange-600', dot: 'bg-status-em-andamento' },
+  concluido: { bg: 'bg-status-concluido/10', text: 'text-status-concluido', dot: 'bg-status-concluido' },
+}
 
 export const PILAR_LABEL: Record<Pilar, string> = {
   geral: 'Geral',
