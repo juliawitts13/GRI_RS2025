@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { STATUS_LABEL, STATUS_ORDER } from '@/lib/domain'
 import { formatarDataBr } from '@/lib/progress'
 import { useIndicadorComentarios } from '@/hooks/useIndicadorComentarios'
-import type { Area, Indicador, Respondente } from '@/types/db'
+import type { Area, Capitulo, Indicador, Respondente, TemaMaterial } from '@/types/db'
 import type { IndicadorInput } from '@/hooks/useIndicadores'
 
 const EMPTY: IndicadorInput = {
@@ -91,6 +91,10 @@ export function IndicadorFormDialog({
   areas,
   respondentes,
   respondenteIdsSelecionados,
+  capitulos,
+  capituloIdsSelecionados,
+  temas,
+  temaIdsSelecionados,
   onSave,
 }: {
   open: boolean
@@ -99,10 +103,16 @@ export function IndicadorFormDialog({
   areas: Area[]
   respondentes: Respondente[]
   respondenteIdsSelecionados: string[]
-  onSave: (input: IndicadorInput, respondenteIds: string[]) => Promise<void>
+  capitulos: Capitulo[]
+  capituloIdsSelecionados: string[]
+  temas: TemaMaterial[]
+  temaIdsSelecionados: string[]
+  onSave: (input: IndicadorInput, respondenteIds: string[], capituloIds: string[], temaIds: string[]) => Promise<void>
 }) {
   const [form, setForm] = useState<IndicadorInput>(EMPTY)
   const [respondenteIds, setRespondenteIds] = useState<string[]>([])
+  const [capituloIds, setCapituloIds] = useState<string[]>([])
+  const [temaIds, setTemaIds] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -121,6 +131,8 @@ export function IndicadorFormDialog({
       setForm(EMPTY)
     }
     setRespondenteIds(respondenteIdsSelecionados)
+    setCapituloIds(capituloIdsSelecionados)
+    setTemaIds(temaIdsSelecionados)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing, open])
 
@@ -133,10 +145,18 @@ export function IndicadorFormDialog({
     setRespondenteIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
 
+  function toggleCapitulo(id: string) {
+    setCapituloIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
+  function toggleTema(id: string) {
+    setTemaIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
   async function handleSave() {
     if (!form.codigo_gri.trim() || !form.titulo.trim()) return
     setSaving(true)
-    await onSave(form, respondenteIds)
+    await onSave(form, respondenteIds, capituloIds, temaIds)
     setSaving(false)
     onOpenChange(false)
   }
@@ -219,6 +239,36 @@ export function IndicadorFormDialog({
                     onChange={() => toggleRespondente(r.id)}
                   />
                   {r.nome}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
+          <Label>Capítulos do relatório (pode selecionar mais de um)</Label>
+          {capitulos.length === 0 ? (
+            <p className="text-sm text-navy-700/60">Nenhum capítulo cadastrado ainda.</p>
+          ) : (
+            <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
+              {capitulos.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 text-sm text-navy-950">
+                  <input type="checkbox" checked={capituloIds.includes(c.id)} onChange={() => toggleCapitulo(c.id)} />
+                  {c.nome}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
+          <Label>Temas materiais (pode selecionar mais de um)</Label>
+          {temas.length === 0 ? (
+            <p className="text-sm text-navy-700/60">Nenhum tema material cadastrado ainda.</p>
+          ) : (
+            <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
+              {temas.map((t) => (
+                <label key={t.id} className="flex items-center gap-2 text-sm text-navy-950">
+                  <input type="checkbox" checked={temaIds.includes(t.id)} onChange={() => toggleTema(t.id)} />
+                  {t.nome}
                 </label>
               ))}
             </div>

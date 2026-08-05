@@ -4,6 +4,10 @@ import { useIndicadores } from '@/hooks/useIndicadores'
 import { useAreas } from '@/hooks/useAreas'
 import { useRespondentes } from '@/hooks/useRespondentes'
 import { useIndicadorRespondentes } from '@/hooks/useIndicadorRespondentes'
+import { useCapitulos } from '@/hooks/useCapitulos'
+import { useIndicadorCapitulos } from '@/hooks/useIndicadorCapitulos'
+import { useTemasMateriais } from '@/hooks/useTemasMateriais'
+import { useIndicadorTemasMateriais } from '@/hooks/useIndicadorTemasMateriais'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Input, Select } from '@/components/ui/Input'
@@ -31,6 +35,10 @@ export function IndicadoresPage() {
   const { areas } = useAreas()
   const { respondentes } = useRespondentes()
   const { respondenteIdsDoIndicador, definirRespondentes, adicionarRespondenteEmLote } = useIndicadorRespondentes()
+  const { capitulos } = useCapitulos()
+  const { capituloIdsDoIndicador, definirCapitulos } = useIndicadorCapitulos()
+  const { temas } = useTemasMateriais()
+  const { temaIdsDoIndicador, definirTemas } = useIndicadorTemasMateriais()
 
   const [busca, setBusca] = useState('')
   const [filtroArea, setFiltroArea] = useState('')
@@ -96,13 +104,24 @@ export function IndicadoresPage() {
     setFormOpen(true)
   }
 
-  async function handleSave(input: Parameters<typeof createIndicador>[0], respondenteIds: string[]) {
+  async function handleSave(
+    input: Parameters<typeof createIndicador>[0],
+    respondenteIds: string[],
+    capituloIds: string[],
+    temaIds: string[],
+  ) {
     if (editing) {
       await updateIndicador(editing.id, input)
       await definirRespondentes(editing.id, respondenteIds)
+      await definirCapitulos(editing.id, capituloIds)
+      await definirTemas(editing.id, temaIds)
     } else {
       const { indicador } = await createIndicador(input)
-      if (indicador) await definirRespondentes(indicador.id, respondenteIds)
+      if (indicador) {
+        await definirRespondentes(indicador.id, respondenteIds)
+        await definirCapitulos(indicador.id, capituloIds)
+        await definirTemas(indicador.id, temaIds)
+      }
     }
   }
 
@@ -302,6 +321,10 @@ export function IndicadoresPage() {
         areas={areas}
         respondentes={respondentes}
         respondenteIdsSelecionados={editing ? respondenteIdsDoIndicador(editing.id) : []}
+        capitulos={capitulos}
+        capituloIdsSelecionados={editing ? capituloIdsDoIndicador(editing.id) : []}
+        temas={temas}
+        temaIdsSelecionados={editing ? temaIdsDoIndicador(editing.id) : []}
         onSave={handleSave}
       />
       <ImportDialog

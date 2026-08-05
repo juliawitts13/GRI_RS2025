@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ClipboardList, Users, Building2, AlertTriangle, LogOut } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Users, Building2, AlertTriangle, BookOpen, Target, LogOut } from 'lucide-react'
 import { Logo } from '@/components/domain/Logo'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
@@ -8,6 +8,8 @@ const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/indicadores', label: 'Coleta de Indicadores', icon: ClipboardList },
   { to: '/cobrancas', label: 'Cobranças', icon: AlertTriangle },
+  { to: '/relatorio', label: 'Relatório', icon: BookOpen },
+  { to: '/materialidade', label: 'Materialidade', icon: Target },
   { to: '/colaboradores', label: 'Colaboradores', icon: Users },
   { to: '/areas', label: 'Áreas', icon: Building2 },
 ]
@@ -62,7 +64,7 @@ export function AppShell() {
             <Outlet />
           </div>
         </main>
-        <nav className="grid grid-cols-5 gap-1 border-t border-navy-100 bg-white px-2 py-2 md:hidden">
+        <nav className="grid grid-cols-4 gap-1 border-t border-navy-100 bg-white px-2 py-2 md:hidden">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}

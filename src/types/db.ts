@@ -56,6 +56,34 @@ export type IndicadorRespondente = {
   created_at: string
 }
 
+export type Capitulo = {
+  id: string
+  nome: string
+  ordem: number | null
+  created_at: string
+}
+
+export type IndicadorCapitulo = {
+  id: string
+  indicador_id: string
+  capitulo_id: string
+  created_at: string
+}
+
+export type TemaMaterial = {
+  id: string
+  nome: string
+  descricao: string | null
+  created_at: string
+}
+
+export type IndicadorTemaMaterial = {
+  id: string
+  indicador_id: string
+  tema_material_id: string
+  created_at: string
+}
+
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '13.0.5'
@@ -90,6 +118,30 @@ export type Database = {
         Row: IndicadorRespondente
         Insert: Partial<IndicadorRespondente> & { indicador_id: string; respondente_id: string }
         Update: Partial<IndicadorRespondente>
+        Relationships: []
+      }
+      capitulos: {
+        Row: Capitulo
+        Insert: Partial<Capitulo> & { nome: string }
+        Update: Partial<Capitulo>
+        Relationships: []
+      }
+      indicador_capitulos: {
+        Row: IndicadorCapitulo
+        Insert: Partial<IndicadorCapitulo> & { indicador_id: string; capitulo_id: string }
+        Update: Partial<IndicadorCapitulo>
+        Relationships: []
+      }
+      temas_materiais: {
+        Row: TemaMaterial
+        Insert: Partial<TemaMaterial> & { nome: string }
+        Update: Partial<TemaMaterial>
+        Relationships: []
+      }
+      indicador_temas_materiais: {
+        Row: IndicadorTemaMaterial
+        Insert: Partial<IndicadorTemaMaterial> & { indicador_id: string; tema_material_id: string }
+        Update: Partial<IndicadorTemaMaterial>
         Relationships: []
       }
     }
