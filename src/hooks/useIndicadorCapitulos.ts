@@ -41,5 +41,29 @@ export function useIndicadorCapitulos() {
     return { error: null }
   }
 
-  return { vinculos, loading, refetch, capituloIdsDoIndicador, indicadorIdsDoCapitulo, definirCapitulos }
+  /** Substitui todos os indicadores de um capítulo pela lista informada. */
+  async function definirIndicadoresDoCapitulo(capituloId: string, indicadorIds: string[]) {
+    await supabase.from('indicador_capitulos').delete().eq('capitulo_id', capituloId)
+    if (indicadorIds.length > 0) {
+      const { error } = await supabase
+        .from('indicador_capitulos')
+        .insert(indicadorIds.map((indicador_id) => ({ indicador_id, capitulo_id: capituloId })))
+      if (error) {
+        await refetch()
+        return { error: error.message }
+      }
+    }
+    await refetch()
+    return { error: null }
+  }
+
+  return {
+    vinculos,
+    loading,
+    refetch,
+    capituloIdsDoIndicador,
+    indicadorIdsDoCapitulo,
+    definirCapitulos,
+    definirIndicadoresDoCapitulo,
+  }
 }

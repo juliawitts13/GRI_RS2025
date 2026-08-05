@@ -131,7 +131,7 @@ export function IndicadoresPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-navy-950">Coleta de Indicadores</h1>
+          <h1 className="text-2xl font-extrabold text-navy-950">GRI</h1>
           <p className="text-sm text-navy-700/70">
             {indicadores.length} indicador{indicadores.length === 1 ? '' : 'es'} GRI no total
           </p>

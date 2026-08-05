@@ -5,8 +5,8 @@ import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/indicadores', label: 'Coleta de Indicadores', icon: ClipboardList },
+  { to: '/', label: 'Central da Coleta de Indicadores', icon: LayoutDashboard, end: true },
+  { to: '/indicadores', label: 'GRI', icon: ClipboardList },
   { to: '/cobrancas', label: 'Cobranças', icon: AlertTriangle },
   { to: '/relatorio', label: 'Relatório', icon: BookOpen },
   { to: '/materialidade', label: 'Materialidade', icon: Target },

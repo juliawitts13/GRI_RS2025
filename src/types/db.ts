@@ -84,6 +84,21 @@ export type IndicadorTemaMaterial = {
   created_at: string
 }
 
+export type CapituloTemaMaterial = {
+  id: string
+  capitulo_id: string
+  tema_material_id: string
+  created_at: string
+}
+
+export type CapituloTopico = {
+  id: string
+  capitulo_id: string
+  texto: string
+  ordem: number | null
+  created_at: string
+}
+
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '13.0.5'
@@ -142,6 +157,18 @@ export type Database = {
         Row: IndicadorTemaMaterial
         Insert: Partial<IndicadorTemaMaterial> & { indicador_id: string; tema_material_id: string }
         Update: Partial<IndicadorTemaMaterial>
+        Relationships: []
+      }
+      capitulo_temas_materiais: {
+        Row: CapituloTemaMaterial
+        Insert: Partial<CapituloTemaMaterial> & { capitulo_id: string; tema_material_id: string }
+        Update: Partial<CapituloTemaMaterial>
+        Relationships: []
+      }
+      capitulo_topicos: {
+        Row: CapituloTopico
+        Insert: Partial<CapituloTopico> & { capitulo_id: string; texto: string }
+        Update: Partial<CapituloTopico>
         Relationships: []
       }
     }

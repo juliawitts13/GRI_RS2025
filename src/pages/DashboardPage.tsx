@@ -1,10 +1,12 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, ClipboardList, Building2 } from 'lucide-react'
+import { Users, ClipboardList, Building2, BookOpen } from 'lucide-react'
 import { useIndicadores } from '@/hooks/useIndicadores'
 import { useAreas } from '@/hooks/useAreas'
 import { useRespondentes } from '@/hooks/useRespondentes'
 import { useIndicadorRespondentes } from '@/hooks/useIndicadorRespondentes'
+import { useCapitulos } from '@/hooks/useCapitulos'
+import { useIndicadorCapitulos } from '@/hooks/useIndicadorCapitulos'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { STATUS_ORDER, STATUS_COLOR, STATUS_LABEL, STATUS_PREENCHIDO } from '@/lib/domain'
@@ -16,6 +18,8 @@ export function DashboardPage() {
   const { areas } = useAreas()
   const { respondentes } = useRespondentes()
   const { respondenteIdsDoIndicador } = useIndicadorRespondentes()
+  const { capitulos } = useCapitulos()
+  const { indicadorIdsDoCapitulo } = useIndicadorCapitulos()
 
   const progresso = calcularProgressoGeral(indicadores)
 
@@ -45,6 +49,17 @@ export function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [indicadores, respondenteIdsDoIndicador, respondenteNomePorId])
 
+  const resumoPorCapitulo = useMemo(() => {
+    return capitulos.map((cap) => {
+      const doCapitulo = indicadorIdsDoCapitulo(cap.id)
+        .map((id) => indicadores.find((i) => i.id === id))
+        .filter((i): i is NonNullable<typeof i> => !!i)
+      const preenchidos = doCapitulo.filter((i) => STATUS_PREENCHIDO.includes(i.status)).length
+      return { nome: cap.nome, total: doCapitulo.length, preenchidos }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capitulos, indicadores, indicadorIdsDoCapitulo])
+
   const resumoPorArea = useMemo(() => {
     const semArea = indicadores.filter((i) => !i.area_id).length
     const porArea = areas.map((a) => {
@@ -59,7 +74,7 @@ export function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-navy-950">Visão geral da coleta</h1>
+        <h1 className="text-2xl font-extrabold text-navy-950">Central da Coleta de Indicadores</h1>
         <p className="text-sm text-navy-700/70">Relatório de Sustentabilidade 2025 — GrupoSC</p>
       </div>
 
@@ -85,6 +100,33 @@ export function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen size={14} /> Progresso por capítulo do relatório
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 pt-3">
+          {resumoPorCapitulo.length === 0 ? (
+            <p className="text-sm text-navy-700/60">
+              Nenhum capítulo cadastrado ainda — cadastre em Relatório.
+            </p>
+          ) : (
+            resumoPorCapitulo.map((c) => (
+              <div key={c.nome}>
+                <div className="mb-1 flex justify-between text-xs font-semibold text-navy-950">
+                  <span>{c.nome}</span>
+                  <span className="text-navy-700/60">
+                    {c.preenchidos}/{c.total}
+                  </span>
+                </div>
+                <ProgressBar value={c.total ? (c.preenchidos / c.total) * 100 : 0} className="h-1.5" />
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
@@ -143,7 +185,7 @@ export function DashboardPage() {
         <div className="flex items-center gap-3">
           <ClipboardList className="text-navy-700/50" size={22} />
           <div>
-            <p className="text-sm font-semibold text-navy-950">Coleta de Indicadores</p>
+            <p className="text-sm font-semibold text-navy-950">GRI</p>
             <p className="text-xs text-navy-700/60">{indicadores.length} indicadores GRI cadastrados</p>
           </div>
         </div>

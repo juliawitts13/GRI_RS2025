@@ -62,7 +62,7 @@ export function MaterialidadePage() {
           <h1 className="text-2xl font-extrabold text-navy-950">Materialidade</h1>
           <p className="text-sm text-navy-700/70">
             Temas materiais e o andamento dos indicadores classificados como relevantes para cada um. Classifique o
-            tema dentro de cada indicador em Coleta de Indicadores.
+            tema dentro de cada indicador em GRI.
           </p>
         </div>
         <Button onClick={openCreate}>
@@ -74,7 +74,7 @@ export function MaterialidadePage() {
         <EmptyState
           icon={<Target size={32} />}
           title="Nenhum tema material cadastrado"
-          description="Cadastre os temas materiais da matriz de materialidade e depois classifique cada indicador em Coleta de Indicadores."
+          description="Cadastre os temas materiais da matriz de materialidade e depois classifique cada indicador em GRI."
           action={
             <Button onClick={openCreate}>
               <Plus size={16} /> Cadastrar tema material
