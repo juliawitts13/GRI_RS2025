@@ -56,6 +56,15 @@ export type IndicadorRespondente = {
   created_at: string
 }
 
+export type IndicadorPergunta = {
+  id: string
+  indicador_id: string
+  texto: string
+  respondida: boolean
+  ordem: number | null
+  created_at: string
+}
+
 export type Capitulo = {
   id: string
   nome: string
@@ -158,6 +167,12 @@ export type Database = {
         Row: IndicadorRespondente
         Insert: Partial<IndicadorRespondente> & { indicador_id: string; respondente_id: string }
         Update: Partial<IndicadorRespondente>
+        Relationships: []
+      }
+      indicador_perguntas: {
+        Row: IndicadorPergunta
+        Insert: Partial<IndicadorPergunta> & { indicador_id: string; texto: string }
+        Update: Partial<IndicadorPergunta>
         Relationships: []
       }
       capitulos: {

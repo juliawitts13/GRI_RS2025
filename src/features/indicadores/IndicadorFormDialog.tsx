@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { MessageSquare, Trash2 } from 'lucide-react'
+import { MessageSquare, Trash2, Plus, Check, X, ListChecks } from 'lucide-react'
 import { Dialog, DialogTitle } from '@/components/ui/Dialog'
 import { Input, Label, Select, Textarea } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { STATUS_LABEL, STATUS_ORDER } from '@/lib/domain'
 import { formatarDataBr } from '@/lib/progress'
 import { useIndicadorComentarios } from '@/hooks/useIndicadorComentarios'
+import { useIndicadorPerguntas } from '@/hooks/useIndicadorPerguntas'
+import { cn } from '@/lib/utils'
 import type { Area, Capitulo, Indicador, Respondente, TemaMaterial } from '@/types/db'
 import type { IndicadorInput } from '@/hooks/useIndicadores'
 
@@ -80,6 +82,105 @@ function HistoricoComentarios({ indicadorId }: { indicadorId: string }) {
           ))}
         </ul>
       )}
+    </div>
+  )
+}
+
+function ChecklistPerguntas({ indicadorId }: { indicadorId: string }) {
+  const { perguntas, addPergunta, updatePergunta, deletePergunta } = useIndicadorPerguntas(indicadorId)
+  const [nova, setNova] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingTexto, setEditingTexto] = useState('')
+
+  async function handleAdd() {
+    if (!nova.trim()) return
+    await addPergunta(nova.trim())
+    setNova('')
+  }
+
+  function startEdit(id: string, texto: string) {
+    setEditingId(id)
+    setEditingTexto(texto)
+  }
+
+  async function saveEdit() {
+    if (editingId && editingTexto.trim()) await updatePergunta(editingId, { texto: editingTexto.trim() })
+    setEditingId(null)
+  }
+
+  const respondidas = perguntas.filter((p) => p.respondida).length
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-navy-100 pt-4">
+      <Label className="flex items-center gap-1.5">
+        <ListChecks size={13} /> Checklist de perguntas
+        {perguntas.length > 0 && (
+          <span className="font-normal text-navy-700/60">
+            ({respondidas}/{perguntas.length} respondidas)
+          </span>
+        )}
+      </Label>
+
+      <div className="flex flex-col gap-1.5">
+        {perguntas.map((p) =>
+          editingId === p.id ? (
+            <div key={p.id} className="flex items-center gap-1.5">
+              <Input
+                autoFocus
+                value={editingTexto}
+                onChange={(e) => setEditingTexto(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveEdit()
+                  if (e.key === 'Escape') setEditingId(null)
+                }}
+                className="text-sm"
+              />
+              <button onClick={saveEdit} className="shrink-0 rounded-md p-1.5 text-status-concluido hover:bg-status-concluido/10">
+                <Check size={15} />
+              </button>
+              <button onClick={() => setEditingId(null)} className="shrink-0 rounded-md p-1.5 text-navy-700 hover:bg-navy-100">
+                <X size={15} />
+              </button>
+            </div>
+          ) : (
+            <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg bg-navy-50 px-3 py-2 text-sm">
+              <label className="flex flex-1 items-center gap-2 text-navy-950">
+                <input
+                  type="checkbox"
+                  checked={p.respondida}
+                  onChange={(e) => updatePergunta(p.id, { respondida: e.target.checked })}
+                />
+                <span
+                  onClick={() => startEdit(p.id, p.texto)}
+                  className={cn('cursor-pointer hover:underline', p.respondida && 'text-navy-700/60 line-through')}
+                >
+                  {p.texto}
+                </span>
+              </label>
+              <button
+                onClick={() => deletePergunta(p.id)}
+                className="shrink-0 rounded-md p-1 text-pillar-social hover:bg-pillar-social-100"
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          ),
+        )}
+        {perguntas.length === 0 && <p className="text-sm text-navy-700/60">Nenhuma pergunta adicionada ainda.</p>}
+      </div>
+
+      <div className="flex gap-2">
+        <Input
+          placeholder="ex: Já temos os dados de emissões consolidados?"
+          value={nova}
+          onChange={(e) => setNova(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+          className="text-sm"
+        />
+        <Button size="sm" variant="outline" onClick={handleAdd} disabled={!nova.trim()}>
+          <Plus size={14} /> Adicionar
+        </Button>
+      </div>
     </div>
   )
 }
@@ -301,6 +402,7 @@ export function IndicadorFormDialog({
           {saving ? 'Salvando...' : 'Salvar'}
         </Button>
 
+        {editing && <ChecklistPerguntas indicadorId={editing.id} />}
         {editing && <HistoricoComentarios indicadorId={editing.id} />}
       </div>
     </Dialog>
