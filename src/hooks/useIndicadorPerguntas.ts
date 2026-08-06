@@ -33,7 +33,7 @@ export function useIndicadorPerguntas(indicadorId: string | null) {
     return { error: error?.message ?? null }
   }
 
-  async function updatePergunta(id: string, patch: { texto?: string; respondida?: boolean }) {
+  async function updatePergunta(id: string, patch: { texto?: string; respondida?: boolean; respondente_id?: string | null }) {
     const { error } = await supabase.from('indicador_perguntas').update(patch).eq('id', id)
     if (!error) await refetch()
     return { error: error?.message ?? null }

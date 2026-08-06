@@ -62,6 +62,7 @@ export type IndicadorPergunta = {
   texto: string
   respondida: boolean
   ordem: number | null
+  respondente_id: string | null
   created_at: string
 }
 

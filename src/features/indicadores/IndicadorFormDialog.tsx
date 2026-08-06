@@ -86,7 +86,13 @@ function HistoricoComentarios({ indicadorId }: { indicadorId: string }) {
   )
 }
 
-function ChecklistPerguntas({ indicadorId }: { indicadorId: string }) {
+function ChecklistPerguntas({
+  indicadorId,
+  respondentesDoIndicador,
+}: {
+  indicadorId: string
+  respondentesDoIndicador: Respondente[]
+}) {
   const { perguntas, addPergunta, updatePergunta, deletePergunta } = useIndicadorPerguntas(indicadorId)
   const [nova, setNova] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -143,26 +149,43 @@ function ChecklistPerguntas({ indicadorId }: { indicadorId: string }) {
               </button>
             </div>
           ) : (
-            <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg bg-navy-50 px-3 py-2 text-sm">
-              <label className="flex flex-1 items-center gap-2 text-navy-950">
-                <input
-                  type="checkbox"
-                  checked={p.respondida}
-                  onChange={(e) => updatePergunta(p.id, { respondida: e.target.checked })}
-                />
-                <span
-                  onClick={() => startEdit(p.id, p.texto)}
-                  className={cn('cursor-pointer hover:underline', p.respondida && 'text-navy-700/60 line-through')}
+            <div key={p.id} className="flex flex-col gap-1.5 rounded-lg bg-navy-50 px-3 py-2 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <label className="flex flex-1 items-center gap-2 text-navy-950">
+                  <input
+                    type="checkbox"
+                    checked={p.respondida}
+                    onChange={(e) => updatePergunta(p.id, { respondida: e.target.checked })}
+                  />
+                  <span
+                    onClick={() => startEdit(p.id, p.texto)}
+                    className={cn('cursor-pointer hover:underline', p.respondida && 'text-navy-700/60 line-through')}
+                  >
+                    {p.texto}
+                  </span>
+                </label>
+                <button
+                  onClick={() => deletePergunta(p.id)}
+                  className="shrink-0 rounded-md p-1 text-pillar-social hover:bg-pillar-social-100"
                 >
-                  {p.texto}
-                </span>
-              </label>
-              <button
-                onClick={() => deletePergunta(p.id)}
-                className="shrink-0 rounded-md p-1 text-pillar-social hover:bg-pillar-social-100"
-              >
-                <Trash2 size={13} />
-              </button>
+                  <Trash2 size={13} />
+                </button>
+              </div>
+              <div className="pl-6">
+                <Select
+                  value={p.respondente_id ?? ''}
+                  onChange={(e) => updatePergunta(p.id, { respondente_id: e.target.value || null })}
+                  className="h-7 py-0 text-xs"
+                  disabled={respondentesDoIndicador.length === 0}
+                >
+                  <option value="">Quem responde: sem responsável definido</option>
+                  {respondentesDoIndicador.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      Quem responde: {r.nome}
+                    </option>
+                  ))}
+                </Select>
+              </div>
             </div>
           ),
         )}
@@ -402,7 +425,12 @@ export function IndicadorFormDialog({
           {saving ? 'Salvando...' : 'Salvar'}
         </Button>
 
-        {editing && <ChecklistPerguntas indicadorId={editing.id} />}
+        {editing && (
+          <ChecklistPerguntas
+            indicadorId={editing.id}
+            respondentesDoIndicador={respondentes.filter((r) => respondenteIds.includes(r.id))}
+          />
+        )}
         {editing && <HistoricoComentarios indicadorId={editing.id} />}
       </div>
     </Dialog>
