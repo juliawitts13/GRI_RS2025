@@ -1,4 +1,4 @@
-import type { Pilar, StatusIndicador, StatusProjeto } from '@/types/db'
+import type { Pilar, StatusEntrevista, StatusIndicador, StatusProjeto } from '@/types/db'
 
 export const STATUS_ORDER: StatusIndicador[] = [
   'nao_iniciado',
@@ -39,6 +39,20 @@ export const STATUS_PROJETO_COLOR: Record<StatusProjeto, { bg: string; text: str
   nao_iniciado: { bg: 'bg-status-nao-iniciado/10', text: 'text-status-nao-iniciado', dot: 'bg-status-nao-iniciado' },
   em_andamento: { bg: 'bg-status-em-andamento/10', text: 'text-orange-600', dot: 'bg-status-em-andamento' },
   concluido: { bg: 'bg-status-concluido/10', text: 'text-status-concluido', dot: 'bg-status-concluido' },
+}
+
+export const STATUS_ENTREVISTA_ORDER: StatusEntrevista[] = ['pendente', 'agendada', 'realizada']
+
+export const STATUS_ENTREVISTA_LABEL: Record<StatusEntrevista, string> = {
+  pendente: 'Pendente',
+  agendada: 'Agendada',
+  realizada: 'Realizada',
+}
+
+export const STATUS_ENTREVISTA_COLOR: Record<StatusEntrevista, { bg: string; text: string; dot: string }> = {
+  pendente: { bg: 'bg-status-nao-iniciado/10', text: 'text-status-nao-iniciado', dot: 'bg-status-nao-iniciado' },
+  agendada: { bg: 'bg-status-aguardando/10', text: 'text-status-aguardando', dot: 'bg-status-aguardando' },
+  realizada: { bg: 'bg-status-concluido/10', text: 'text-status-concluido', dot: 'bg-status-concluido' },
 }
 
 export const PILAR_LABEL: Record<Pilar, string> = {

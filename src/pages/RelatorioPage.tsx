@@ -6,6 +6,8 @@ import { useIndicadores } from '@/hooks/useIndicadores'
 import { useTemasMateriais } from '@/hooks/useTemasMateriais'
 import { useCapituloTemasMateriais } from '@/hooks/useCapituloTemasMateriais'
 import { useCapituloTopicos } from '@/hooks/useCapituloTopicos'
+import { useEntrevistas } from '@/hooks/useEntrevistas'
+import { useEntrevistaCapitulos } from '@/hooks/useEntrevistaCapitulos'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Dialog, DialogTitle } from '@/components/ui/Dialog'
@@ -117,6 +119,8 @@ export function RelatorioPage() {
   const { temas } = useTemasMateriais()
   const { temaIdsDoCapitulo, definirTemasDoCapitulo } = useCapituloTemasMateriais()
   const { topicosDoCapitulo, addTopico, updateTopico, deleteTopico } = useCapituloTopicos()
+  const { entrevistas } = useEntrevistas()
+  const { entrevistaIdsDoCapitulo, definirEntrevistasDoCapitulo } = useEntrevistaCapitulos()
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Capitulo | null>(null)
@@ -165,6 +169,12 @@ export function RelatorioPage() {
     const atuais = temaIdsDoCapitulo(cap.id)
     const proximos = atuais.includes(temaId) ? atuais.filter((id) => id !== temaId) : [...atuais, temaId]
     definirTemasDoCapitulo(cap.id, proximos)
+  }
+
+  function toggleEntrevista(cap: Capitulo, entrevistaId: string) {
+    const atuais = entrevistaIdsDoCapitulo(cap.id)
+    const proximos = atuais.includes(entrevistaId) ? atuais.filter((id) => id !== entrevistaId) : [...atuais, entrevistaId]
+    definirEntrevistasDoCapitulo(cap.id, proximos)
   }
 
   const semDados = !loading && capitulos.length === 0
@@ -320,6 +330,29 @@ export function RelatorioPage() {
                       onUpdate={updateTopico}
                       onDelete={deleteTopico}
                     />
+
+                    <div>
+                      <Label>Entrevistas relacionadas (pode selecionar mais de uma)</Label>
+                      {entrevistas.length === 0 ? (
+                        <p className="text-sm text-navy-700/60">
+                          Nenhuma entrevista cadastrada ainda — cadastre em Entrevistas.
+                        </p>
+                      ) : (
+                        <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
+                          {entrevistas.map((ent) => (
+                            <label key={ent.id} className="flex items-center gap-2 text-sm text-navy-950">
+                              <input
+                                type="checkbox"
+                                checked={entrevistaIdsDoCapitulo(cap.id).includes(ent.id)}
+                                onChange={() => toggleEntrevista(cap, ent.id)}
+                              />
+                              {ent.nome}
+                              {ent.cargo && <span className="text-xs text-navy-700/60">({ent.cargo})</span>}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </Card>

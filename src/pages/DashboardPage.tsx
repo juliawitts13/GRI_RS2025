@@ -1,15 +1,24 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, ClipboardList, Building2, BookOpen } from 'lucide-react'
+import { Users, ClipboardList, Building2, BookOpen, Mic } from 'lucide-react'
 import { useIndicadores } from '@/hooks/useIndicadores'
 import { useAreas } from '@/hooks/useAreas'
 import { useRespondentes } from '@/hooks/useRespondentes'
 import { useIndicadorRespondentes } from '@/hooks/useIndicadorRespondentes'
 import { useCapitulos } from '@/hooks/useCapitulos'
 import { useIndicadorCapitulos } from '@/hooks/useIndicadorCapitulos'
+import { useEntrevistas } from '@/hooks/useEntrevistas'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
-import { STATUS_ORDER, STATUS_COLOR, STATUS_LABEL, STATUS_PREENCHIDO } from '@/lib/domain'
+import {
+  STATUS_ORDER,
+  STATUS_COLOR,
+  STATUS_LABEL,
+  STATUS_PREENCHIDO,
+  STATUS_ENTREVISTA_ORDER,
+  STATUS_ENTREVISTA_COLOR,
+  STATUS_ENTREVISTA_LABEL,
+} from '@/lib/domain'
 import { calcularProgressoGeral } from '@/lib/progress'
 import { cn } from '@/lib/utils'
 
@@ -20,8 +29,15 @@ export function DashboardPage() {
   const { respondenteIdsDoIndicador } = useIndicadorRespondentes()
   const { capitulos } = useCapitulos()
   const { indicadorIdsDoCapitulo } = useIndicadorCapitulos()
+  const { entrevistas } = useEntrevistas()
 
-  const progresso = calcularProgressoGeral(indicadores)
+  const progresso = calcularProgressoGeral(indicadores, entrevistas)
+
+  const contagemEntrevistas = useMemo(() => {
+    const base: Record<string, number> = Object.fromEntries(STATUS_ENTREVISTA_ORDER.map((s) => [s, 0]))
+    for (const ent of entrevistas) base[ent.status]++
+    return base
+  }, [entrevistas])
 
   const respondenteNomePorId = useMemo(() => new Map(respondentes.map((r) => [r.id, r.nome])), [respondentes])
 
@@ -85,7 +101,8 @@ export function DashboardPage() {
             <p className="text-4xl font-extrabold md:text-5xl">{progresso}%</p>
           </div>
           <p className="text-right text-xs text-white/60">
-            {contagemStatus.concluido} de {indicadores.length} indicadores concluídos
+            {contagemStatus.concluido + contagemEntrevistas.realizada} de {indicadores.length + entrevistas.length}{' '}
+            itens concluídos (indicadores + entrevistas)
           </p>
         </div>
         <ProgressBar value={progresso} trackClassName="bg-white/15" className="h-4" />
@@ -93,13 +110,40 @@ export function DashboardPage() {
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {STATUS_ORDER.map((s) => (
-          <Card key={s} className="p-4">
-            <p className={cn('mb-1 h-1.5 w-8 rounded-full', STATUS_COLOR[s].dot)} />
-            <p className="text-2xl font-extrabold text-navy-950">{contagemStatus[s]}</p>
-            <p className="text-xs font-semibold text-navy-700/70">{STATUS_LABEL[s]}</p>
-          </Card>
+          <Link key={s} to={`/indicadores?status=${s}`}>
+            <Card className="p-4 transition-shadow hover:shadow-md">
+              <p className={cn('mb-1 h-1.5 w-8 rounded-full', STATUS_COLOR[s].dot)} />
+              <p className="text-2xl font-extrabold text-navy-950">{contagemStatus[s]}</p>
+              <p className="text-xs font-semibold text-navy-700/70">{STATUS_LABEL[s]}</p>
+            </Card>
+          </Link>
         ))}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mic size={14} /> Entrevistas
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-3">
+          {entrevistas.length === 0 ? (
+            <p className="text-sm text-navy-700/60">Nenhuma entrevista cadastrada ainda — cadastre em Entrevistas.</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              {STATUS_ENTREVISTA_ORDER.map((s) => (
+                <Link key={s} to={`/entrevistas?status=${s}`}>
+                  <Card className="p-4 transition-shadow hover:shadow-md">
+                    <p className={cn('mb-1 h-1.5 w-8 rounded-full', STATUS_ENTREVISTA_COLOR[s].dot)} />
+                    <p className="text-2xl font-extrabold text-navy-950">{contagemEntrevistas[s]}</p>
+                    <p className="text-xs font-semibold text-navy-700/70">{STATUS_ENTREVISTA_LABEL[s]}</p>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

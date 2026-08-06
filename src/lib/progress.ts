@@ -1,13 +1,15 @@
-import type { Indicador } from '@/types/db'
+import type { Entrevista, Indicador } from '@/types/db'
 
 /**
- * Progresso geral = % de indicadores com status 'concluido'.
+ * Progresso geral = % de indicadores concluídos + entrevistas realizadas, sobre o total combinado.
  * Decisão de negócio confirmada com a Júlia após remover o módulo de Cronograma.
  */
-export function calcularProgressoGeral(indicadores: Indicador[]): number {
-  if (indicadores.length === 0) return 0
+export function calcularProgressoGeral(indicadores: Indicador[], entrevistas: Entrevista[] = []): number {
+  const total = indicadores.length + entrevistas.length
+  if (total === 0) return 0
   const concluidos = indicadores.filter((i) => i.status === 'concluido').length
-  return Math.round((concluidos / indicadores.length) * 100)
+  const realizadas = entrevistas.filter((e) => e.status === 'realizada').length
+  return Math.round(((concluidos + realizadas) / total) * 100)
 }
 
 export function formatarDataBr(iso: string | null | undefined): string {

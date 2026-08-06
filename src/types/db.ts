@@ -134,6 +134,27 @@ export type Projeto = {
   updated_at: string
 }
 
+export type StatusEntrevista = 'pendente' | 'agendada' | 'realizada'
+
+export type Entrevista = {
+  id: string
+  nome: string
+  cargo: string | null
+  status: StatusEntrevista
+  data_agendada: string | null
+  data_realizacao: string | null
+  notas: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type EntrevistaCapitulo = {
+  id: string
+  entrevista_id: string
+  capitulo_id: string
+  created_at: string
+}
+
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '13.0.5'
@@ -228,6 +249,18 @@ export type Database = {
         Row: Projeto
         Insert: Partial<Projeto> & { tema_material_id: string; nome: string }
         Update: Partial<Projeto>
+        Relationships: []
+      }
+      entrevistas: {
+        Row: Entrevista
+        Insert: Partial<Entrevista> & { nome: string }
+        Update: Partial<Entrevista>
+        Relationships: []
+      }
+      entrevista_capitulos: {
+        Row: EntrevistaCapitulo
+        Insert: Partial<EntrevistaCapitulo> & { entrevista_id: string; capitulo_id: string }
+        Update: Partial<EntrevistaCapitulo>
         Relationships: []
       }
     }

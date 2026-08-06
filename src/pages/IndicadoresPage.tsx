@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, Search, Upload, ClipboardList, Pencil, Trash2, Users, X, ChevronDown, ChevronUp, LayoutGrid, List } from 'lucide-react'
 import { useIndicadores } from '@/hooks/useIndicadores'
 import { useAreas } from '@/hooks/useAreas'
@@ -70,9 +71,12 @@ export function IndicadoresPage() {
   const { temas } = useTemasMateriais()
   const { temaIdsDoIndicador, definirTemas } = useIndicadorTemasMateriais()
 
+  const [searchParams] = useSearchParams()
+  const statusInicial = (searchParams.get('status') as StatusIndicador | null) ?? ''
+
   const [busca, setBusca] = useState('')
   const [filtroArea, setFiltroArea] = useState('')
-  const [filtroStatus, setFiltroStatus] = useState<StatusIndicador | ''>('')
+  const [filtroStatus, setFiltroStatus] = useState<StatusIndicador | ''>(statusInicial)
   const [filtroRespondente, setFiltroRespondente] = useState('')
   const [filtroGri, setFiltroGri] = useState('')
 
@@ -82,7 +86,7 @@ export function IndicadoresPage() {
   const [editing, setEditing] = useState<Indicador | null>(null)
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
 
-  const [visao, setVisao] = useState<'normas' | 'lista'>('normas')
+  const [visao, setVisao] = useState<'normas' | 'lista'>(statusInicial ? 'lista' : 'normas')
   const [categoriaAberta, setCategoriaAberta] = useState<CategoriaNorma | null>('tematicas')
   const [normaSelecionada, setNormaSelecionada] = useState<number | null>(null)
 

@@ -6,9 +6,9 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { IndicadoresPage } from '@/pages/IndicadoresPage'
 import { ColaboradoresPage } from '@/pages/ColaboradoresPage'
 import { AreasPage } from '@/pages/AreasPage'
-import { CobrancasPage } from '@/pages/CobrancasPage'
 import { RelatorioPage } from '@/pages/RelatorioPage'
 import { MaterialidadePage } from '@/pages/MaterialidadePage'
+import { EntrevistasPage } from '@/pages/EntrevistasPage'
 
 function ProtectedRoutes() {
   const { session, loading } = useAuth()
@@ -30,9 +30,9 @@ function ProtectedRoutes() {
         <Route path="indicadores" element={<IndicadoresPage />} />
         <Route path="colaboradores" element={<ColaboradoresPage />} />
         <Route path="areas" element={<AreasPage />} />
-        <Route path="cobrancas" element={<CobrancasPage />} />
         <Route path="relatorio" element={<RelatorioPage />} />
         <Route path="materialidade" element={<MaterialidadePage />} />
+        <Route path="entrevistas" element={<EntrevistasPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
