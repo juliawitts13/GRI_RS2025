@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MessageSquare, Trash2, Plus, Check, X, ListChecks } from 'lucide-react'
+import { MessageSquare, Trash2, Plus, Check, X, ListChecks, Info, CalendarClock, Layers } from 'lucide-react'
 import { Dialog, DialogTitle } from '@/components/ui/Dialog'
 import { Input, Label, Select, Textarea } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
@@ -21,6 +21,15 @@ const EMPTY: IndicadorInput = {
   vencimento: null,
   ficha_conteudo: null,
 }
+
+type Aba = 'info' | 'cronograma' | 'estrutura' | 'indicador'
+
+const ABAS: { key: Aba; label: string; icon: typeof Info }[] = [
+  { key: 'info', label: 'Informações do Indicador', icon: Info },
+  { key: 'cronograma', label: 'Cronograma', icon: CalendarClock },
+  { key: 'estrutura', label: 'Estrutura', icon: Layers },
+  { key: 'indicador', label: 'Indicador', icon: ListChecks },
+]
 
 function hojeISO() {
   return new Date().toISOString().slice(0, 10)
@@ -117,7 +126,7 @@ function ChecklistPerguntas({
   const respondidas = perguntas.filter((p) => p.respondida).length
 
   return (
-    <div className="flex flex-col gap-3 border-t border-navy-100 pt-4">
+    <div className="flex flex-col gap-3">
       <Label className="flex items-center gap-1.5">
         <ListChecks size={13} /> Checklist de perguntas
         {perguntas.length > 0 && (
@@ -238,6 +247,7 @@ export function IndicadorFormDialog({
   const [capituloIds, setCapituloIds] = useState<string[]>([])
   const [temaIds, setTemaIds] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
+  const [aba, setAba] = useState<Aba>('info')
 
   useEffect(() => {
     if (editing) {
@@ -257,6 +267,7 @@ export function IndicadorFormDialog({
     setRespondenteIds(respondenteIdsSelecionados)
     setCapituloIds(capituloIdsSelecionados)
     setTemaIds(temaIdsSelecionados)
+    setAba('info')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing, open])
 
@@ -285,153 +296,188 @@ export function IndicadorFormDialog({
     onOpenChange(false)
   }
 
+  const abasVisiveis = editing ? ABAS : ABAS.filter((a) => a.key !== 'indicador')
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTitle>{editing ? `${editing.codigo_gri} — ${editing.titulo}` : 'Novo indicador'}</DialogTitle>
-      <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="codigo">Código GRI</Label>
-            <Input
-              id="codigo"
-              placeholder="ex: 2-15"
-              value={form.codigo_gri}
-              disabled={!!editing}
-              onChange={(e) => setForm({ ...form, codigo_gri: e.target.value })}
-            />
-          </div>
-          <div>
-            <Label htmlFor="prazo">Data de entrega</Label>
-            <Input
-              id="prazo"
-              type="date"
-              value={form.prazo ?? ''}
-              onChange={(e) => setForm({ ...form, prazo: e.target.value || null })}
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="expectativa">Expectativa de entrega</Label>
-            <Input
-              id="expectativa"
-              type="date"
-              value={form.expectativa_entrega ?? ''}
-              onChange={(e) => setForm({ ...form, expectativa_entrega: e.target.value || null })}
-            />
-          </div>
-          <div>
-            <Label htmlFor="vencimento">Vencimento</Label>
-            <Input
-              id="vencimento"
-              type="date"
-              value={form.vencimento ?? ''}
-              onChange={(e) => setForm({ ...form, vencimento: e.target.value || null })}
-            />
-          </div>
-        </div>
-        <div>
-          <Label htmlFor="titulo">Título do indicador</Label>
-          <Input id="titulo" value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} />
-        </div>
-        <div>
-          <Label htmlFor="area">Área responsável</Label>
-          <Select
-            id="area"
-            value={form.area_id ?? ''}
-            onChange={(e) => setForm({ ...form, area_id: e.target.value || null })}
-          >
-            <option value="">Sem área</option>
-            {areas.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.nome}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div>
-          <Label>Respondentes (pode selecionar mais de um)</Label>
-          {respondentesDaArea.length === 0 ? (
-            <p className="text-sm text-navy-700/60">Nenhum colaborador com papel de respondente disponível.</p>
-          ) : (
-            <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
-              {respondentesDaArea.map((r) => (
-                <label key={r.id} className="flex items-center gap-2 text-sm text-navy-950">
-                  <input
-                    type="checkbox"
-                    checked={respondenteIds.includes(r.id)}
-                    onChange={() => toggleRespondente(r.id)}
-                  />
-                  {r.nome}
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
-        <div>
-          <Label>Capítulos do relatório (pode selecionar mais de um)</Label>
-          {capitulos.length === 0 ? (
-            <p className="text-sm text-navy-700/60">Nenhum capítulo cadastrado ainda.</p>
-          ) : (
-            <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
-              {capitulos.map((c) => (
-                <label key={c.id} className="flex items-center gap-2 text-sm text-navy-950">
-                  <input type="checkbox" checked={capituloIds.includes(c.id)} onChange={() => toggleCapitulo(c.id)} />
-                  {c.nome}
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
-        <div>
-          <Label>Temas materiais (pode selecionar mais de um)</Label>
-          {temas.length === 0 ? (
-            <p className="text-sm text-navy-700/60">Nenhum tema material cadastrado ainda.</p>
-          ) : (
-            <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
-              {temas.map((t) => (
-                <label key={t.id} className="flex items-center gap-2 text-sm text-navy-950">
-                  <input type="checkbox" checked={temaIds.includes(t.id)} onChange={() => toggleTema(t.id)} />
-                  {t.nome}
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
-        <div>
-          <Label htmlFor="status">Status</Label>
-          <Select
-            id="status"
-            value={form.status}
-            onChange={(e) => setForm({ ...form, status: e.target.value as IndicadorInput['status'] })}
-          >
-            {STATUS_ORDER.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="ficha">Anotações da ficha (opcional)</Label>
-          <Textarea
-            id="ficha"
-            rows={3}
-            value={form.ficha_conteudo ?? ''}
-            onChange={(e) => setForm({ ...form, ficha_conteudo: e.target.value || null })}
-          />
-        </div>
-        <Button onClick={handleSave} disabled={saving} className="mt-1">
-          {saving ? 'Salvando...' : 'Salvar'}
-        </Button>
 
-        {editing && (
+      <div className="mb-4 flex flex-wrap gap-1 rounded-lg border border-navy-100 p-1">
+        {abasVisiveis.map((a) => (
+          <button
+            key={a.key}
+            onClick={() => setAba(a.key)}
+            className={cn(
+              'flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+              aba === a.key ? 'bg-navy-900 text-white' : 'text-navy-700 hover:bg-navy-50',
+            )}
+          >
+            <a.icon size={14} /> {a.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-4">
+        {aba === 'info' && (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="codigo">Código GRI</Label>
+                <Input
+                  id="codigo"
+                  placeholder="ex: 2-15"
+                  value={form.codigo_gri}
+                  disabled={!!editing}
+                  onChange={(e) => setForm({ ...form, codigo_gri: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  id="status"
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value as IndicadorInput['status'] })}
+                >
+                  {STATUS_ORDER.map((s) => (
+                    <option key={s} value={s}>
+                      {STATUS_LABEL[s]}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="titulo">Título do indicador</Label>
+              <Input id="titulo" value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} />
+            </div>
+            <div>
+              <Label htmlFor="area">Área responsável</Label>
+              <Select
+                id="area"
+                value={form.area_id ?? ''}
+                onChange={(e) => setForm({ ...form, area_id: e.target.value || null })}
+              >
+                <option value="">Sem área</option>
+                {areas.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.nome}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label>Respondentes (pode selecionar mais de um)</Label>
+              {respondentesDaArea.length === 0 ? (
+                <p className="text-sm text-navy-700/60">Nenhum colaborador com papel de respondente disponível.</p>
+              ) : (
+                <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
+                  {respondentesDaArea.map((r) => (
+                    <label key={r.id} className="flex items-center gap-2 text-sm text-navy-950">
+                      <input
+                        type="checkbox"
+                        checked={respondenteIds.includes(r.id)}
+                        onChange={() => toggleRespondente(r.id)}
+                      />
+                      {r.nome}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="ficha">Anotações da ficha (opcional)</Label>
+              <Textarea
+                id="ficha"
+                rows={3}
+                value={form.ficha_conteudo ?? ''}
+                onChange={(e) => setForm({ ...form, ficha_conteudo: e.target.value || null })}
+              />
+            </div>
+          </>
+        )}
+
+        {aba === 'cronograma' && (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="prazo">Data de entrega</Label>
+                <Input
+                  id="prazo"
+                  type="date"
+                  value={form.prazo ?? ''}
+                  onChange={(e) => setForm({ ...form, prazo: e.target.value || null })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="expectativa">Expectativa de entrega</Label>
+                <Input
+                  id="expectativa"
+                  type="date"
+                  value={form.expectativa_entrega ?? ''}
+                  onChange={(e) => setForm({ ...form, expectativa_entrega: e.target.value || null })}
+                />
+              </div>
+            </div>
+            <div className="max-w-[calc(50%-0.375rem)]">
+              <Label htmlFor="vencimento">Vencimento</Label>
+              <Input
+                id="vencimento"
+                type="date"
+                value={form.vencimento ?? ''}
+                onChange={(e) => setForm({ ...form, vencimento: e.target.value || null })}
+              />
+            </div>
+            {editing && <HistoricoComentarios indicadorId={editing.id} />}
+          </>
+        )}
+
+        {aba === 'estrutura' && (
+          <>
+            <div>
+              <Label>Capítulos do relatório (pode selecionar mais de um)</Label>
+              {capitulos.length === 0 ? (
+                <p className="text-sm text-navy-700/60">Nenhum capítulo cadastrado ainda.</p>
+              ) : (
+                <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
+                  {capitulos.map((c) => (
+                    <label key={c.id} className="flex items-center gap-2 text-sm text-navy-950">
+                      <input type="checkbox" checked={capituloIds.includes(c.id)} onChange={() => toggleCapitulo(c.id)} />
+                      {c.nome}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div>
+              <Label>Temas materiais (pode selecionar mais de um)</Label>
+              {temas.length === 0 ? (
+                <p className="text-sm text-navy-700/60">Nenhum tema material cadastrado ainda.</p>
+              ) : (
+                <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
+                  {temas.map((t) => (
+                    <label key={t.id} className="flex items-center gap-2 text-sm text-navy-950">
+                      <input type="checkbox" checked={temaIds.includes(t.id)} onChange={() => toggleTema(t.id)} />
+                      {t.nome}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {aba === 'indicador' && editing && (
           <ChecklistPerguntas
             indicadorId={editing.id}
             respondentesDoIndicador={respondentes.filter((r) => respondenteIds.includes(r.id))}
           />
         )}
-        {editing && <HistoricoComentarios indicadorId={editing.id} />}
+
+        {aba !== 'indicador' && (
+          <Button onClick={handleSave} disabled={saving} className="mt-1">
+            {saving ? 'Salvando...' : 'Salvar'}
+          </Button>
+        )}
       </div>
     </Dialog>
   )
