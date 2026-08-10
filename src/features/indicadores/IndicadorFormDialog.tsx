@@ -247,9 +247,7 @@ function ChecklistPerguntas({
   )
 }
 
-export function IndicadorFormDialog({
-  open,
-  onOpenChange,
+export function IndicadorDetalhe({
   editing,
   areas,
   respondentes,
@@ -259,9 +257,8 @@ export function IndicadorFormDialog({
   temas,
   temaIdsSelecionados,
   onSave,
+  onSaved,
 }: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
   editing: Indicador | null
   areas: Area[]
   respondentes: Respondente[]
@@ -271,6 +268,7 @@ export function IndicadorFormDialog({
   temas: TemaMaterial[]
   temaIdsSelecionados: string[]
   onSave: (input: IndicadorInput, respondenteIds: string[], capituloIds: string[], temaIds: string[]) => Promise<void>
+  onSaved?: () => void
 }) {
   const [form, setForm] = useState<IndicadorInput>(EMPTY)
   const [respondenteIds, setRespondenteIds] = useState<string[]>([])
@@ -299,7 +297,7 @@ export function IndicadorFormDialog({
     setTemaIds(temaIdsSelecionados)
     setAba('info')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, open])
+  }, [editing])
 
   const respondentesElegiveis = respondentes.filter((r) => r.eh_respondente)
   const respondentesDaArea = form.area_id
@@ -323,15 +321,13 @@ export function IndicadorFormDialog({
     setSaving(true)
     await onSave(form, respondenteIds, capituloIds, temaIds)
     setSaving(false)
-    onOpenChange(false)
+    onSaved?.()
   }
 
   const abasVisiveis = editing ? ABAS : ABAS.filter((a) => a.key !== 'indicador')
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} widthClassName="w-[min(900px,95vw)]">
-      <DialogTitle>{editing ? `${editing.codigo_gri} — ${editing.titulo}` : 'Novo indicador'}</DialogTitle>
-
+    <>
       <div className="mb-4 flex flex-wrap gap-1 rounded-lg border border-navy-100 p-1">
         {abasVisiveis.map((a) => (
           <button
@@ -509,6 +505,50 @@ export function IndicadorFormDialog({
           </Button>
         )}
       </div>
+    </>
+  )
+}
+
+export function IndicadorFormDialog({
+  open,
+  onOpenChange,
+  editing,
+  areas,
+  respondentes,
+  respondenteIdsSelecionados,
+  capitulos,
+  capituloIdsSelecionados,
+  temas,
+  temaIdsSelecionados,
+  onSave,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  editing: Indicador | null
+  areas: Area[]
+  respondentes: Respondente[]
+  respondenteIdsSelecionados: string[]
+  capitulos: Capitulo[]
+  capituloIdsSelecionados: string[]
+  temas: TemaMaterial[]
+  temaIdsSelecionados: string[]
+  onSave: (input: IndicadorInput, respondenteIds: string[], capituloIds: string[], temaIds: string[]) => Promise<void>
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTitle>{editing ? `${editing.codigo_gri} — ${editing.titulo}` : 'Novo indicador'}</DialogTitle>
+      <IndicadorDetalhe
+        editing={editing}
+        areas={areas}
+        respondentes={respondentes}
+        respondenteIdsSelecionados={respondenteIdsSelecionados}
+        capitulos={capitulos}
+        capituloIdsSelecionados={capituloIdsSelecionados}
+        temas={temas}
+        temaIdsSelecionados={temaIdsSelecionados}
+        onSave={onSave}
+        onSaved={() => onOpenChange(false)}
+      />
     </Dialog>
   )
 }
