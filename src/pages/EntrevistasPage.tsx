@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Plus, Trash2, Pencil, Mic, ChevronDown, ChevronUp, X, Check, HelpCircle } from 'lucide-react'
 import { useEntrevistas } from '@/hooks/useEntrevistas'
@@ -178,6 +178,13 @@ export function EntrevistasPage() {
 
   const capituloNomePorId = useMemo(() => new Map(capitulos.map((c) => [c.id, c.nome])), [capitulos])
   const areaNomePorId = useMemo(() => new Map(areas.map((a) => [a.id, a.nome])), [areas])
+
+  useEffect(() => {
+    const abrirId = searchParams.get('abrir')
+    if (!abrirId) return
+    if (entrevistas.some((e) => e.id === abrirId)) setExpandido(abrirId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, entrevistas])
 
   const contagem = useMemo(() => {
     const base: Record<StatusEntrevista, number> = { pendente: 0, agendada: 0, realizada: 0 }

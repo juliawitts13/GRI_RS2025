@@ -1,5 +1,16 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ClipboardList, Users, Building2, BookOpen, Target, Mic, Settings, LogOut } from 'lucide-react'
+import {
+  LayoutDashboard,
+  ClipboardList,
+  Users,
+  Building2,
+  BookOpen,
+  Target,
+  Mic,
+  AlertCircle,
+  Settings,
+  LogOut,
+} from 'lucide-react'
 import { Logo } from '@/components/domain/Logo'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
@@ -7,13 +18,15 @@ import { cn } from '@/lib/utils'
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/indicadores', label: 'GRI', icon: ClipboardList },
-  { to: '/configuracoes', label: 'Configurações', icon: Settings },
+  { to: '/pendencias', label: 'Pendências', icon: AlertCircle },
   { to: '/relatorio', label: 'Relatório', icon: BookOpen },
   { to: '/materialidade', label: 'Materialidade', icon: Target },
   { to: '/entrevistas', label: 'Entrevistas', icon: Mic },
   { to: '/colaboradores', label: 'Colaboradores', icon: Users },
   { to: '/areas', label: 'Áreas', icon: Building2 },
 ]
+
+const NAV_ITEMS_RODAPE: typeof NAV_ITEMS = [{ to: '/configuracoes', label: 'Configurações', icon: Settings, end: false }]
 
 export function AppShell() {
   const { session, signOut } = useAuth()
@@ -42,7 +55,24 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto border-t border-navy-100 pt-4">
+        <div className="border-t border-navy-100 pt-3">
+          {NAV_ITEMS_RODAPE.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors',
+                  isActive ? 'bg-navy-900 text-white' : 'text-navy-700 hover:bg-navy-50',
+                )
+              }
+            >
+              <item.icon size={18} />
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+        <div className="mt-3 border-t border-navy-100 pt-4">
           <p className="truncate px-2 text-xs text-navy-700/60">{session?.user.email}</p>
           <button
             onClick={signOut}
@@ -66,7 +96,7 @@ export function AppShell() {
           </div>
         </main>
         <nav className="grid grid-cols-4 gap-1 border-t border-navy-100 bg-white px-2 py-2 md:hidden">
-          {NAV_ITEMS.map((item) => (
+          {[...NAV_ITEMS, ...NAV_ITEMS_RODAPE].map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
