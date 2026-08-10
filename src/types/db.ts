@@ -144,6 +144,8 @@ export type Entrevista = {
   data_agendada: string | null
   data_realizacao: string | null
   notas: string | null
+  area_id: string | null
+  marca: string | null
   created_at: string
   updated_at: string
 }

@@ -9,6 +9,8 @@ export type EntrevistaInput = {
   data_agendada: string | null
   data_realizacao: string | null
   notas: string | null
+  area_id: string | null
+  marca: string | null
 }
 
 export function useEntrevistas() {

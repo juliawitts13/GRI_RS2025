@@ -4,6 +4,7 @@ import { Plus, Trash2, Pencil, Mic, ChevronDown, ChevronUp, X } from 'lucide-rea
 import { useEntrevistas } from '@/hooks/useEntrevistas'
 import { useEntrevistaCapitulos } from '@/hooks/useEntrevistaCapitulos'
 import { useCapitulos } from '@/hooks/useCapitulos'
+import { useAreas } from '@/hooks/useAreas'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -23,6 +24,8 @@ const EMPTY: EntrevistaInput = {
   data_agendada: null,
   data_realizacao: null,
   notas: null,
+  area_id: null,
+  marca: null,
 }
 
 function EntrevistaStatusBadge({ status }: { status: StatusEntrevista }) {
@@ -39,6 +42,7 @@ export function EntrevistasPage() {
   const { entrevistas, loading, createEntrevista, updateEntrevista, deleteEntrevista } = useEntrevistas()
   const { capituloIdsDaEntrevista, definirCapitulosDaEntrevista } = useEntrevistaCapitulos()
   const { capitulos } = useCapitulos()
+  const { areas } = useAreas()
 
   const [searchParams] = useSearchParams()
   const [filtroStatus, setFiltroStatus] = useState<StatusEntrevista | ''>(
@@ -53,6 +57,7 @@ export function EntrevistasPage() {
   const [expandido, setExpandido] = useState<string | null>(null)
 
   const capituloNomePorId = useMemo(() => new Map(capitulos.map((c) => [c.id, c.nome])), [capitulos])
+  const areaNomePorId = useMemo(() => new Map(areas.map((a) => [a.id, a.nome])), [areas])
 
   const contagem = useMemo(() => {
     const base: Record<StatusEntrevista, number> = { pendente: 0, agendada: 0, realizada: 0 }
@@ -76,6 +81,8 @@ export function EntrevistasPage() {
       data_agendada: e.data_agendada,
       data_realizacao: e.data_realizacao,
       notas: e.notas,
+      area_id: e.area_id,
+      marca: e.marca,
     })
     setCapituloIds(capituloIdsDaEntrevista(e.id))
     setDialogOpen(true)
@@ -179,6 +186,14 @@ export function EntrevistasPage() {
                       <EntrevistaStatusBadge status={e.status} />
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5 text-xs text-navy-700/60">
+                      {e.area_id && (
+                        <span className="rounded-full bg-navy-50 px-2 py-0.5 font-semibold text-navy-700">
+                          {areaNomePorId.get(e.area_id) ?? '—'}
+                        </span>
+                      )}
+                      {e.marca && (
+                        <span className="rounded-full bg-orange-100 px-2 py-0.5 font-semibold text-orange-700">{e.marca}</span>
+                      )}
                       {e.status === 'agendada' && e.data_agendada && <span>Agendada para {formatarDataBr(e.data_agendada)}</span>}
                       {e.status === 'realizada' && e.data_realizacao && <span>Realizada em {formatarDataBr(e.data_realizacao)}</span>}
                       {idsCapitulos.map((cid) => (
@@ -242,6 +257,32 @@ export function EntrevistasPage() {
               onChange={(e) => setForm({ ...form, cargo: e.target.value || null })}
               placeholder="ex: Diretora Financeira"
             />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="area-entrevista">Área</Label>
+              <Select
+                id="area-entrevista"
+                value={form.area_id ?? ''}
+                onChange={(e) => setForm({ ...form, area_id: e.target.value || null })}
+              >
+                <option value="">Sem área</option>
+                {areas.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.nome}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="marca-entrevista">Marca</Label>
+              <Input
+                id="marca-entrevista"
+                value={form.marca ?? ''}
+                onChange={(e) => setForm({ ...form, marca: e.target.value || null })}
+                placeholder="ex: GrupoSC"
+              />
+            </div>
           </div>
           <div>
             <Label htmlFor="status-entrevista">Status</Label>
