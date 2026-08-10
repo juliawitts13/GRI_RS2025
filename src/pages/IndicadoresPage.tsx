@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { Plus, Search, Upload, ClipboardList, Pencil, Trash2, Users, X, LayoutGrid, List } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Search, ClipboardList, X, LayoutGrid, List } from 'lucide-react'
 import { useIndicadores } from '@/hooks/useIndicadores'
 import { useAreas } from '@/hooks/useAreas'
 import { useRespondentes } from '@/hooks/useRespondentes'
@@ -16,10 +16,8 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusBadge } from '@/components/domain/StatusBadge'
 import { PillarBadge } from '@/components/domain/PillarBadge'
 import { STATUS_LABEL, STATUS_ORDER } from '@/lib/domain'
-import { formatarDataBr } from '@/lib/progress'
-import { IndicadorFormDialog, IndicadorDetalhe } from '@/features/indicadores/IndicadorFormDialog'
-import { ImportDialog } from '@/features/indicadores/ImportDialog'
-import { BulkAssignDialog } from '@/features/indicadores/BulkAssignDialog'
+import { IndicadorResumo } from '@/features/indicadores/IndicadorResumo'
+import { IndicadorOperacional } from '@/features/indicadores/IndicadorOperacional'
 import { cn } from '@/lib/utils'
 import type { Indicador, StatusIndicador } from '@/types/db'
 
@@ -54,18 +52,10 @@ function categoriaDoCodigo(codigoGri: string): CategoriaNorma {
 }
 
 export function IndicadoresPage() {
-  const {
-    indicadores,
-    loading,
-    createIndicador,
-    updateIndicador,
-    deleteIndicador,
-    upsertManyByCodigo,
-    updateManyIndicadores,
-  } = useIndicadores()
+  const { indicadores, loading, updateIndicador } = useIndicadores()
   const { areas } = useAreas()
   const { respondentes } = useRespondentes()
-  const { respondenteIdsDoIndicador, definirRespondentes, adicionarRespondenteEmLote } = useIndicadorRespondentes()
+  const { respondenteIdsDoIndicador } = useIndicadorRespondentes()
   const { capitulos } = useCapitulos()
   const { capituloIdsDoIndicador, definirCapitulos } = useIndicadorCapitulos()
   const { temas } = useTemasMateriais()
@@ -80,11 +70,8 @@ export function IndicadoresPage() {
   const [filtroRespondente, setFiltroRespondente] = useState('')
   const [filtroGri, setFiltroGri] = useState('')
 
-  const [formOpen, setFormOpen] = useState(false)
-  const [importOpen, setImportOpen] = useState(false)
-  const [bulkOpen, setBulkOpen] = useState(false)
-  const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
   const [selecionadoId, setSelecionadoId] = useState<string | null>(null)
+  const [modo, setModo] = useState<'resumo' | 'editar'>('resumo')
 
   const [visao, setVisao] = useState<'normas' | 'lista'>(statusInicial ? 'lista' : 'normas')
   const [normaSelecionada, setNormaSelecionada] = useState<number | null>(null)
@@ -127,67 +114,29 @@ export function IndicadoresPage() {
     return mapa
   }, [filtrados])
 
-  const todosFiltradosSelecionados = filtrados.length > 0 && filtrados.every((i) => selecionados.has(i.id))
-
-  function toggleSelecionado(id: string) {
-    setSelecionados((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  function toggleSelecionarTodos() {
-    setSelecionados((prev) => {
-      if (todosFiltradosSelecionados) {
-        const next = new Set(prev)
-        for (const i of filtrados) next.delete(i.id)
-        return next
-      }
-      const next = new Set(prev)
-      for (const i of filtrados) next.add(i.id)
-      return next
-    })
-  }
-
-  function openCreate() {
-    setFormOpen(true)
+  function abrirResumo(id: string) {
+    setSelecionadoId(id)
+    setModo('resumo')
   }
 
   useEffect(() => {
     const abrirId = searchParams.get('abrir')
     if (!abrirId) return
     const ind = indicadores.find((i) => i.id === abrirId)
-    if (ind) setSelecionadoId(ind.id)
+    if (ind) abrirResumo(ind.id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, indicadores])
 
-  async function handleCriar(
-    input: Parameters<typeof createIndicador>[0],
-    respondenteIds: string[],
-    capituloIds: string[],
-    temaIds: string[],
-  ) {
-    const { indicador } = await createIndicador(input)
-    if (indicador) {
-      await definirRespondentes(indicador.id, respondenteIds)
-      await definirCapitulos(indicador.id, capituloIds)
-      await definirTemas(indicador.id, temaIds)
-    }
+  async function toggleEstruturaCapitulo(indicadorId: string, capituloId: string) {
+    const atual = capituloIdsDoIndicador(indicadorId)
+    const next = atual.includes(capituloId) ? atual.filter((x) => x !== capituloId) : [...atual, capituloId]
+    await definirCapitulos(indicadorId, next)
   }
 
-  async function handleAtualizar(
-    id: string,
-    input: Parameters<typeof updateIndicador>[1],
-    respondenteIds: string[],
-    capituloIds: string[],
-    temaIds: string[],
-  ) {
-    await updateIndicador(id, input)
-    await definirRespondentes(id, respondenteIds)
-    await definirCapitulos(id, capituloIds)
-    await definirTemas(id, temaIds)
+  async function toggleEstruturaTema(indicadorId: string, temaId: string) {
+    const atual = temaIdsDoIndicador(indicadorId)
+    const next = atual.includes(temaId) ? atual.filter((x) => x !== temaId) : [...atual, temaId]
+    await definirTemas(indicadorId, next)
   }
 
   const indicadorSelecionado = selecionadoId ? indicadores.find((i) => i.id === selecionadoId) ?? null : null
@@ -202,33 +151,25 @@ export function IndicadoresPage() {
             {indicadores.length} indicador{indicadores.length === 1 ? '' : 'es'} GRI no total
           </p>
         </div>
-        <div className="flex gap-2">
-          <div className="flex rounded-lg border border-navy-100 p-0.5">
-            <button
-              onClick={() => setVisao('normas')}
-              className={cn(
-                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
-                visao === 'normas' ? 'bg-navy-900 text-white' : 'text-navy-700 hover:bg-navy-50',
-              )}
-            >
-              <LayoutGrid size={14} /> Por normas GRI
-            </button>
-            <button
-              onClick={() => setVisao('lista')}
-              className={cn(
-                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
-                visao === 'lista' ? 'bg-navy-900 text-white' : 'text-navy-700 hover:bg-navy-50',
-              )}
-            >
-              <List size={14} /> Lista
-            </button>
-          </div>
-          <Button variant="outline" onClick={() => setImportOpen(true)}>
-            <Upload size={16} /> Importar planilha
-          </Button>
-          <Button onClick={openCreate}>
-            <Plus size={16} /> Novo indicador
-          </Button>
+        <div className="flex rounded-lg border border-navy-100 p-0.5">
+          <button
+            onClick={() => setVisao('normas')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+              visao === 'normas' ? 'bg-navy-900 text-white' : 'text-navy-700 hover:bg-navy-50',
+            )}
+          >
+            <LayoutGrid size={14} /> Por normas GRI
+          </button>
+          <button
+            onClick={() => setVisao('lista')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+              visao === 'lista' ? 'bg-navy-900 text-white' : 'text-navy-700 hover:bg-navy-50',
+            )}
+          >
+            <List size={14} /> Lista
+          </button>
         </div>
       </div>
 
@@ -277,42 +218,34 @@ export function IndicadoresPage() {
         </div>
       </Card>
 
-      {visao === 'lista' && !selecionadoId && selecionados.size > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg bg-navy-900 px-4 py-3 text-white">
-          <span className="text-sm font-semibold">
-            {selecionados.size} indicador{selecionados.size === 1 ? '' : 'es'} selecionado
-            {selecionados.size === 1 ? '' : 's'}
-          </span>
-          <Button size="sm" onClick={() => setBulkOpen(true)}>
-            <Users size={14} /> Atribuir em lote
-          </Button>
-          <button
-            onClick={() => setSelecionados(new Set())}
-            className="ml-auto flex items-center gap-1 text-xs font-semibold text-white/70 hover:text-white"
-          >
-            <X size={14} /> Limpar seleção
-          </button>
-        </div>
-      )}
-
       {semDados ? (
         <EmptyState
           icon={<ClipboardList size={32} />}
           title="Nenhum indicador cadastrado ainda"
-          description="Importe a planilha de indicadores GRI (com área, respondente, status e data de entrega) ou cadastre um indicador manualmente."
+          description="Cadastre os indicadores GRI (código, título e cronograma) na aba Configurações."
           action={
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setImportOpen(true)}>
-                <Upload size={16} /> Importar planilha
-              </Button>
-              <Button onClick={openCreate}>
-                <Plus size={16} /> Novo indicador
-              </Button>
-            </div>
+            <Link to="/configuracoes">
+              <Button>Ir para Configurações</Button>
+            </Link>
           }
         />
       ) : filtrados.length === 0 ? (
         <EmptyState title="Nenhum indicador corresponde aos filtros" description="Tente ajustar os filtros aplicados." />
+      ) : indicadorSelecionado && modo === 'resumo' ? (
+        <IndicadorResumo
+          indicador={indicadorSelecionado}
+          areaNome={indicadorSelecionado.area_id ? areaNomePorId.get(indicadorSelecionado.area_id) ?? null : null}
+          respondentesGerais={respondentes.filter((r) =>
+            respondenteIdsDoIndicador(indicadorSelecionado.id).includes(r.id),
+          )}
+          respondentesPorId={respondenteNomePorId}
+          capitulosVinculados={capitulos.filter((c) =>
+            capituloIdsDoIndicador(indicadorSelecionado.id).includes(c.id),
+          )}
+          temasVinculados={temas.filter((t) => temaIdsDoIndicador(indicadorSelecionado.id).includes(t.id))}
+          onEditar={() => setModo('editar')}
+          onFechar={() => setSelecionadoId(null)}
+        />
       ) : indicadorSelecionado ? (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_1fr]">
           <Card className="flex max-h-[75vh] flex-col gap-1 overflow-y-auto p-2">
@@ -344,25 +277,30 @@ export function IndicadoresPage() {
                 <p className="font-mono text-xs font-semibold text-navy-700/60">{indicadorSelecionado.codigo_gri}</p>
                 <h2 className="text-lg font-bold text-navy-950">{indicadorSelecionado.titulo}</h2>
               </div>
-              <button
-                onClick={() => setSelecionadoId(null)}
-                className="shrink-0 rounded-md p-1.5 text-navy-700/60 hover:bg-navy-50 hover:text-navy-950"
-              >
-                <X size={18} />
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => setModo('resumo')}>
+                  Ver resumo
+                </Button>
+                <button
+                  onClick={() => setSelecionadoId(null)}
+                  className="rounded-md p-1.5 text-navy-700/60 hover:bg-navy-50 hover:text-navy-950"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
-            <IndicadorDetalhe
-              editing={indicadorSelecionado}
-              areas={areas}
-              respondentes={respondentes}
-              respondenteIdsSelecionados={respondenteIdsDoIndicador(indicadorSelecionado.id)}
+            <IndicadorOperacional
+              indicador={indicadorSelecionado}
+              respondentesDoIndicador={respondentes.filter((r) =>
+                respondenteIdsDoIndicador(indicadorSelecionado.id).includes(r.id),
+              )}
               capitulos={capitulos}
               capituloIdsSelecionados={capituloIdsDoIndicador(indicadorSelecionado.id)}
+              onToggleCapitulo={(capituloId) => toggleEstruturaCapitulo(indicadorSelecionado.id, capituloId)}
               temas={temas}
               temaIdsSelecionados={temaIdsDoIndicador(indicadorSelecionado.id)}
-              onSave={(input, respondenteIds, capituloIds, temaIds) =>
-                handleAtualizar(indicadorSelecionado.id, input, respondenteIds, capituloIds, temaIds)
-              }
+              onToggleTema={(temaId) => toggleEstruturaTema(indicadorSelecionado.id, temaId)}
+              onStatusChange={(status) => updateIndicador(indicadorSelecionado.id, { status })}
             />
           </Card>
         </div>
@@ -413,7 +351,7 @@ export function IndicadoresPage() {
                     {normas.get(normaSelecionada)!.map((ind) => (
                       <div
                         key={ind.id}
-                        onClick={() => setSelecionadoId(ind.id)}
+                        onClick={() => abrirResumo(ind.id)}
                         className="flex cursor-pointer flex-col gap-1 rounded-lg bg-navy-50 px-3 py-2 text-sm hover:bg-navy-100"
                       >
                         <div className="flex items-center gap-2">
@@ -436,21 +374,11 @@ export function IndicadoresPage() {
           <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="bg-navy-50 text-xs font-semibold uppercase text-navy-700/70">
               <tr>
-                <th className="w-10 px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={todosFiltradosSelecionados}
-                    onChange={toggleSelecionarTodos}
-                    aria-label="Selecionar todos"
-                  />
-                </th>
                 <th className="px-3 py-3">Código</th>
                 <th className="px-3 py-3">Título</th>
                 <th className="px-3 py-3">Área</th>
                 <th className="px-3 py-3">Respondentes</th>
-                <th className="px-3 py-3">Vencimento</th>
                 <th className="px-3 py-3">Status</th>
-                <th className="w-20 px-3 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-navy-100">
@@ -460,22 +388,7 @@ export function IndicadoresPage() {
                   .filter(Boolean)
                   .join(', ')
                 return (
-                  <tr
-                    key={ind.id}
-                    onClick={() => setSelecionadoId(ind.id)}
-                    className={cn(
-                      'cursor-pointer hover:bg-navy-50/50',
-                      selecionados.has(ind.id) && 'bg-orange-50/60',
-                    )}
-                  >
-                    <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={selecionados.has(ind.id)}
-                        onChange={() => toggleSelecionado(ind.id)}
-                        aria-label={`Selecionar ${ind.codigo_gri}`}
-                      />
-                    </td>
+                  <tr key={ind.id} onClick={() => abrirResumo(ind.id)} className="cursor-pointer hover:bg-navy-50/50">
                     <td className="px-3 py-2.5">
                       <div className="flex flex-col gap-1">
                         <span className="w-fit rounded-md bg-navy-900 px-2 py-0.5 font-mono text-xs font-bold text-white">
@@ -489,22 +402,8 @@ export function IndicadoresPage() {
                       {ind.area_id ? areaNomePorId.get(ind.area_id) ?? '—' : '—'}
                     </td>
                     <td className="px-3 py-2.5 text-navy-700/80">{nomesRespondentes || '—'}</td>
-                    <td className="px-3 py-2.5 text-navy-700/80">{formatarDataBr(ind.vencimento)}</td>
                     <td className="px-3 py-2.5">
                       <StatusBadge status={ind.status} />
-                    </td>
-                    <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex justify-end gap-1">
-                        <button onClick={() => setSelecionadoId(ind.id)} className="rounded-md p-1.5 text-navy-700 hover:bg-navy-100">
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => deleteIndicador(ind.id)}
-                          className="rounded-md p-1.5 text-pillar-social hover:bg-pillar-social-100"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
                     </td>
                   </tr>
                 )
@@ -513,47 +412,6 @@ export function IndicadoresPage() {
           </table>
         </Card>
       )}
-
-      <IndicadorFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        editing={null}
-        areas={areas}
-        respondentes={respondentes}
-        respondenteIdsSelecionados={[]}
-        capitulos={capitulos}
-        capituloIdsSelecionados={[]}
-        temas={temas}
-        temaIdsSelecionados={[]}
-        onSave={handleCriar}
-      />
-      <ImportDialog
-        open={importOpen}
-        onOpenChange={setImportOpen}
-        areas={areas}
-        respondentes={respondentes}
-        onImport={async (itens) => {
-          const { indicadores: salvos } = await upsertManyByCodigo(itens.map((i) => i.input))
-          const idPorCodigo = new Map(salvos.map((s) => [s.codigo_gri, s.id]))
-          for (const item of itens) {
-            const id = idPorCodigo.get(item.input.codigo_gri)
-            if (id) await definirRespondentes(id, item.respondenteIds)
-          }
-        }}
-      />
-      <BulkAssignDialog
-        open={bulkOpen}
-        onOpenChange={setBulkOpen}
-        count={selecionados.size}
-        areas={areas}
-        respondentes={respondentes}
-        onApply={async (patch, respondenteIdParaAdicionar) => {
-          const ids = Array.from(selecionados)
-          if (Object.keys(patch).length > 0) await updateManyIndicadores(ids, patch)
-          if (respondenteIdParaAdicionar) await adicionarRespondenteEmLote(ids, respondenteIdParaAdicionar)
-          setSelecionados(new Set())
-        }}
-      />
     </div>
   )
 }

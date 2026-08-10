@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ClipboardList, Users, Building2, BookOpen, Target, Mic, LogOut } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Users, Building2, BookOpen, Target, Mic, Settings, LogOut } from 'lucide-react'
 import { Logo } from '@/components/domain/Logo'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/indicadores', label: 'GRI', icon: ClipboardList },
+  { to: '/configuracoes', label: 'Configurações', icon: Settings },
   { to: '/relatorio', label: 'Relatório', icon: BookOpen },
   { to: '/materialidade', label: 'Materialidade', icon: Target },
   { to: '/entrevistas', label: 'Entrevistas', icon: Mic },

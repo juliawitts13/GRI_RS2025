@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react'
-import { MessageSquare, Trash2, Plus, Check, X, ListChecks, Info, CalendarClock, Layers } from 'lucide-react'
+import { Trash2, Plus, Check, X, ListChecks, Info, CalendarClock } from 'lucide-react'
 import { Dialog, DialogTitle } from '@/components/ui/Dialog'
 import { Input, Label, Select, Textarea } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { STATUS_LABEL, STATUS_ORDER } from '@/lib/domain'
-import { formatarDataBr } from '@/lib/progress'
-import { useIndicadorComentarios } from '@/hooks/useIndicadorComentarios'
 import { useIndicadorPerguntas } from '@/hooks/useIndicadorPerguntas'
 import { cn } from '@/lib/utils'
-import type { Area, Capitulo, Indicador, Respondente, TemaMaterial } from '@/types/db'
+import type { Area, Indicador, Respondente } from '@/types/db'
 import type { IndicadorInput } from '@/hooks/useIndicadores'
 
 const EMPTY: IndicadorInput = {
@@ -22,104 +20,24 @@ const EMPTY: IndicadorInput = {
   ficha_conteudo: null,
 }
 
-type Aba = 'info' | 'cronograma' | 'estrutura' | 'indicador'
+type Aba = 'info' | 'cronograma' | 'perguntas'
 
 const ABAS: { key: Aba; label: string; icon: typeof Info }[] = [
   { key: 'info', label: 'Informações do Indicador', icon: Info },
   { key: 'cronograma', label: 'Cronograma', icon: CalendarClock },
-  { key: 'estrutura', label: 'Estrutura', icon: Layers },
-  { key: 'indicador', label: 'Indicador', icon: ListChecks },
+  { key: 'perguntas', label: 'Perguntas', icon: ListChecks },
 ]
 
-function hojeISO() {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function HistoricoComentarios({ indicadorId }: { indicadorId: string }) {
-  const { comentarios, addComentario, deleteComentario } = useIndicadorComentarios(indicadorId)
-  const [data, setData] = useState(hojeISO())
-  const [texto, setTexto] = useState('')
-  const [saving, setSaving] = useState(false)
-
-  async function handleAdd() {
-    if (!texto.trim()) return
-    setSaving(true)
-    await addComentario(data, texto.trim())
-    setSaving(false)
-    setTexto('')
-    setData(hojeISO())
-  }
-
-  return (
-    <div className="flex flex-col gap-3 border-t border-navy-100 pt-4">
-      <Label className="flex items-center gap-1.5">
-        <MessageSquare size={13} /> Histórico de interação com o respondente
-      </Label>
-
-      <div className="flex flex-col gap-2 rounded-lg bg-navy-50 p-3">
-        <div className="flex gap-2">
-          <Input type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-40" />
-        </div>
-        <Textarea
-          rows={2}
-          placeholder="Registrar uma interação, cobrança, dúvida respondida..."
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-        />
-        <Button size="sm" variant="outline" onClick={handleAdd} disabled={saving || !texto.trim()} className="self-end">
-          {saving ? 'Adicionando...' : 'Adicionar ao histórico'}
-        </Button>
-      </div>
-
-      {comentarios.length === 0 ? (
-        <p className="text-xs text-navy-700/60">Nenhum registro ainda.</p>
-      ) : (
-        <ul className="flex max-h-56 flex-col gap-2 overflow-y-auto">
-          {comentarios.map((c) => (
-            <li key={c.id} className="flex items-start justify-between gap-2 rounded-lg border border-navy-100 p-2.5">
-              <div>
-                <p className="text-xs font-semibold text-navy-700/70">{formatarDataBr(c.data)}</p>
-                <p className="text-sm text-navy-950">{c.texto}</p>
-              </div>
-              <button
-                onClick={() => deleteComentario(c.id)}
-                className="shrink-0 rounded-md p-1 text-pillar-social hover:bg-pillar-social-100"
-              >
-                <Trash2 size={13} />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
-}
-
-function ChecklistPerguntas({
-  indicadorId,
-  respondentesDoIndicador,
-}: {
-  indicadorId: string
-  respondentesDoIndicador: Respondente[]
-}) {
+function PerguntasCatalogo({ indicadorId }: { indicadorId: string }) {
   const { perguntas, addPergunta, updatePergunta, deletePergunta } = useIndicadorPerguntas(indicadorId)
   const [nova, setNova] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTexto, setEditingTexto] = useState('')
-  const [respondenteEmMassa, setRespondenteEmMassa] = useState('')
-  const [aplicandoEmMassa, setAplicandoEmMassa] = useState(false)
 
   async function handleAdd() {
     if (!nova.trim()) return
     await addPergunta(nova.trim())
     setNova('')
-  }
-
-  async function handleAplicarEmMassa() {
-    if (perguntas.length === 0) return
-    setAplicandoEmMassa(true)
-    await Promise.all(perguntas.map((p) => updatePergunta(p.id, { respondente_id: respondenteEmMassa || null })))
-    setAplicandoEmMassa(false)
   }
 
   function startEdit(id: string, texto: string) {
@@ -132,39 +50,14 @@ function ChecklistPerguntas({
     setEditingId(null)
   }
 
-  const respondidas = perguntas.filter((p) => p.respondida).length
-
   return (
     <div className="flex flex-col gap-3">
       <Label className="flex items-center gap-1.5">
-        <ListChecks size={13} /> Checklist de perguntas
-        {perguntas.length > 0 && (
-          <span className="font-normal text-navy-700/60">
-            ({respondidas}/{perguntas.length} respondidas)
-          </span>
-        )}
+        <ListChecks size={13} /> Perguntas do relatório
       </Label>
-
-      {perguntas.length > 0 && (
-        <div className="flex items-center gap-2 rounded-lg bg-navy-50 p-2.5">
-          <Select
-            value={respondenteEmMassa}
-            onChange={(e) => setRespondenteEmMassa(e.target.value)}
-            className="h-8 flex-1 py-0 text-xs"
-            disabled={respondentesDoIndicador.length === 0}
-          >
-            <option value="">Marcar todas com: sem responsável definido</option>
-            {respondentesDoIndicador.map((r) => (
-              <option key={r.id} value={r.id}>
-                Marcar todas com: {r.nome}
-              </option>
-            ))}
-          </Select>
-          <Button size="sm" variant="outline" onClick={handleAplicarEmMassa} disabled={aplicandoEmMassa}>
-            {aplicandoEmMassa ? 'Aplicando...' : 'Aplicar a todas'}
-          </Button>
-        </div>
-      )}
+      <p className="-mt-1 text-xs text-navy-700/60">
+        Defina aqui o texto de cada pergunta. Marcar quem responde e o que já foi respondido é feito na aba GRI.
+      </p>
 
       <div className="flex flex-col gap-1.5">
         {perguntas.map((p) =>
@@ -188,43 +81,19 @@ function ChecklistPerguntas({
               </button>
             </div>
           ) : (
-            <div key={p.id} className="flex flex-col gap-1.5 rounded-lg bg-navy-50 px-3 py-2 text-sm">
-              <div className="flex items-center justify-between gap-2">
-                <label className="flex flex-1 items-center gap-2 text-navy-950">
-                  <input
-                    type="checkbox"
-                    checked={p.respondida}
-                    onChange={(e) => updatePergunta(p.id, { respondida: e.target.checked })}
-                  />
-                  <span
-                    onClick={() => startEdit(p.id, p.texto)}
-                    className={cn('cursor-pointer hover:underline', p.respondida && 'text-navy-700/60 line-through')}
-                  >
-                    {p.texto}
-                  </span>
-                </label>
-                <button
-                  onClick={() => deletePergunta(p.id)}
-                  className="shrink-0 rounded-md p-1 text-pillar-social hover:bg-pillar-social-100"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-              <div className="pl-6">
-                <Select
-                  value={p.respondente_id ?? ''}
-                  onChange={(e) => updatePergunta(p.id, { respondente_id: e.target.value || null })}
-                  className="h-7 py-0 text-xs"
-                  disabled={respondentesDoIndicador.length === 0}
-                >
-                  <option value="">Quem responde: sem responsável definido</option>
-                  {respondentesDoIndicador.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      Quem responde: {r.nome}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+            <div
+              key={p.id}
+              className="flex items-center justify-between gap-2 rounded-lg bg-navy-50 px-3 py-2 text-sm"
+            >
+              <span onClick={() => startEdit(p.id, p.texto)} className="flex-1 cursor-pointer text-navy-950 hover:underline">
+                {p.texto}
+              </span>
+              <button
+                onClick={() => deletePergunta(p.id)}
+                className="shrink-0 rounded-md p-1 text-pillar-social hover:bg-pillar-social-100"
+              >
+                <Trash2 size={13} />
+              </button>
             </div>
           ),
         )}
@@ -247,15 +116,11 @@ function ChecklistPerguntas({
   )
 }
 
-export function IndicadorDetalhe({
+export function IndicadorCatalogoForm({
   editing,
   areas,
   respondentes,
   respondenteIdsSelecionados,
-  capitulos,
-  capituloIdsSelecionados,
-  temas,
-  temaIdsSelecionados,
   onSave,
   onSaved,
 }: {
@@ -263,17 +128,11 @@ export function IndicadorDetalhe({
   areas: Area[]
   respondentes: Respondente[]
   respondenteIdsSelecionados: string[]
-  capitulos: Capitulo[]
-  capituloIdsSelecionados: string[]
-  temas: TemaMaterial[]
-  temaIdsSelecionados: string[]
-  onSave: (input: IndicadorInput, respondenteIds: string[], capituloIds: string[], temaIds: string[]) => Promise<void>
+  onSave: (input: IndicadorInput, respondenteIds: string[]) => Promise<void>
   onSaved?: () => void
 }) {
   const [form, setForm] = useState<IndicadorInput>(EMPTY)
   const [respondenteIds, setRespondenteIds] = useState<string[]>([])
-  const [capituloIds, setCapituloIds] = useState<string[]>([])
-  const [temaIds, setTemaIds] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [aba, setAba] = useState<Aba>('info')
 
@@ -293,8 +152,6 @@ export function IndicadorDetalhe({
       setForm(EMPTY)
     }
     setRespondenteIds(respondenteIdsSelecionados)
-    setCapituloIds(capituloIdsSelecionados)
-    setTemaIds(temaIdsSelecionados)
     setAba('info')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing])
@@ -308,23 +165,15 @@ export function IndicadorDetalhe({
     setRespondenteIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
 
-  function toggleCapitulo(id: string) {
-    setCapituloIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }
-
-  function toggleTema(id: string) {
-    setTemaIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }
-
   async function handleSave() {
     if (!form.codigo_gri.trim() || !form.titulo.trim()) return
     setSaving(true)
-    await onSave(form, respondenteIds, capituloIds, temaIds)
+    await onSave(form, respondenteIds)
     setSaving(false)
     onSaved?.()
   }
 
-  const abasVisiveis = editing ? ABAS : ABAS.filter((a) => a.key !== 'indicador')
+  const abasVisiveis = editing ? ABAS : ABAS.filter((a) => a.key !== 'perguntas')
 
   return (
     <>
@@ -358,11 +207,12 @@ export function IndicadorDetalhe({
                 />
               </div>
               <div>
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">Status inicial</Label>
                 <Select
                   id="status"
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value as IndicadorInput['status'] })}
+                  disabled={!!editing}
                 >
                   {STATUS_ORDER.map((s) => (
                     <option key={s} value={s}>
@@ -372,6 +222,9 @@ export function IndicadorDetalhe({
                 </Select>
               </div>
             </div>
+            {editing && (
+              <p className="-mt-2 text-xs text-navy-700/60">O status é atualizado no dia a dia pela aba GRI.</p>
+            )}
             <div>
               <Label htmlFor="titulo">Título do indicador</Label>
               <Input id="titulo" value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} />
@@ -453,53 +306,12 @@ export function IndicadorDetalhe({
                 onChange={(e) => setForm({ ...form, vencimento: e.target.value || null })}
               />
             </div>
-            {editing && <HistoricoComentarios indicadorId={editing.id} />}
           </>
         )}
 
-        {aba === 'estrutura' && (
-          <>
-            <div>
-              <Label>Capítulos do relatório (pode selecionar mais de um)</Label>
-              {capitulos.length === 0 ? (
-                <p className="text-sm text-navy-700/60">Nenhum capítulo cadastrado ainda.</p>
-              ) : (
-                <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
-                  {capitulos.map((c) => (
-                    <label key={c.id} className="flex items-center gap-2 text-sm text-navy-950">
-                      <input type="checkbox" checked={capituloIds.includes(c.id)} onChange={() => toggleCapitulo(c.id)} />
-                      {c.nome}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div>
-              <Label>Temas materiais (pode selecionar mais de um)</Label>
-              {temas.length === 0 ? (
-                <p className="text-sm text-navy-700/60">Nenhum tema material cadastrado ainda.</p>
-              ) : (
-                <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
-                  {temas.map((t) => (
-                    <label key={t.id} className="flex items-center gap-2 text-sm text-navy-950">
-                      <input type="checkbox" checked={temaIds.includes(t.id)} onChange={() => toggleTema(t.id)} />
-                      {t.nome}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        )}
+        {aba === 'perguntas' && editing && <PerguntasCatalogo indicadorId={editing.id} />}
 
-        {aba === 'indicador' && editing && (
-          <ChecklistPerguntas
-            indicadorId={editing.id}
-            respondentesDoIndicador={respondentes.filter((r) => respondenteIds.includes(r.id))}
-          />
-        )}
-
-        {aba !== 'indicador' && (
+        {aba !== 'perguntas' && (
           <Button onClick={handleSave} disabled={saving} className="mt-1">
             {saving ? 'Salvando...' : 'Salvar'}
           </Button>
@@ -509,17 +321,13 @@ export function IndicadorDetalhe({
   )
 }
 
-export function IndicadorFormDialog({
+export function IndicadorCatalogoDialog({
   open,
   onOpenChange,
   editing,
   areas,
   respondentes,
   respondenteIdsSelecionados,
-  capitulos,
-  capituloIdsSelecionados,
-  temas,
-  temaIdsSelecionados,
   onSave,
 }: {
   open: boolean
@@ -528,24 +336,16 @@ export function IndicadorFormDialog({
   areas: Area[]
   respondentes: Respondente[]
   respondenteIdsSelecionados: string[]
-  capitulos: Capitulo[]
-  capituloIdsSelecionados: string[]
-  temas: TemaMaterial[]
-  temaIdsSelecionados: string[]
-  onSave: (input: IndicadorInput, respondenteIds: string[], capituloIds: string[], temaIds: string[]) => Promise<void>
+  onSave: (input: IndicadorInput, respondenteIds: string[]) => Promise<void>
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTitle>{editing ? `${editing.codigo_gri} — ${editing.titulo}` : 'Novo indicador'}</DialogTitle>
-      <IndicadorDetalhe
+      <IndicadorCatalogoForm
         editing={editing}
         areas={areas}
         respondentes={respondentes}
         respondenteIdsSelecionados={respondenteIdsSelecionados}
-        capitulos={capitulos}
-        capituloIdsSelecionados={capituloIdsSelecionados}
-        temas={temas}
-        temaIdsSelecionados={temaIdsSelecionados}
         onSave={onSave}
         onSaved={() => onOpenChange(false)}
       />
