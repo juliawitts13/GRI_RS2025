@@ -145,6 +145,19 @@ function PerguntasPropostas({ entrevistaId }: { entrevistaId: string }) {
   )
 }
 
+function PerguntasResumo({ entrevistaId }: { entrevistaId: string }) {
+  const { perguntas } = useEntrevistaPerguntas(entrevistaId)
+  if (perguntas.length === 0) return null
+  const aprovadas = perguntas.filter((p) => p.status === 'aprovada').length
+  return (
+    <span className="flex items-center gap-1 rounded-full bg-navy-50 px-2 py-0.5 font-semibold text-navy-700">
+      <HelpCircle size={11} />
+      {perguntas.length} pergunta{perguntas.length === 1 ? '' : 's'} proposta{perguntas.length === 1 ? '' : 's'} ·{' '}
+      {aprovadas} aprovada{aprovadas === 1 ? '' : 's'}
+    </span>
+  )
+}
+
 export function EntrevistasPage() {
   const { entrevistas, loading, createEntrevista, updateEntrevista, deleteEntrevista } = useEntrevistas()
   const { capituloIdsDaEntrevista, definirCapitulosDaEntrevista } = useEntrevistaCapitulos()
@@ -301,6 +314,7 @@ export function EntrevistasPage() {
                       {e.marca && (
                         <span className="rounded-full bg-orange-100 px-2 py-0.5 font-semibold text-orange-700">{e.marca}</span>
                       )}
+                      <PerguntasResumo entrevistaId={e.id} />
                       {e.status === 'agendada' && e.data_agendada && <span>Agendada para {formatarDataBr(e.data_agendada)}</span>}
                       {e.status === 'realizada' && e.data_realizacao && <span>Realizada em {formatarDataBr(e.data_realizacao)}</span>}
                       {idsCapitulos.map((cid) => (
