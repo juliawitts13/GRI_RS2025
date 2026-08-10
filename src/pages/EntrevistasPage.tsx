@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Plus, Trash2, Pencil, Mic, ChevronDown, ChevronUp, X } from 'lucide-react'
+import { Plus, Trash2, Pencil, Mic, ChevronDown, ChevronUp, X, Check, HelpCircle } from 'lucide-react'
 import { useEntrevistas } from '@/hooks/useEntrevistas'
 import { useEntrevistaCapitulos } from '@/hooks/useEntrevistaCapitulos'
+import { useEntrevistaPerguntas } from '@/hooks/useEntrevistaPerguntas'
 import { useCapitulos } from '@/hooks/useCapitulos'
 import { useAreas } from '@/hooks/useAreas'
 import { Button } from '@/components/ui/Button'
@@ -35,6 +36,112 @@ function EntrevistaStatusBadge({ status }: { status: StatusEntrevista }) {
       <span className={cn('h-1.5 w-1.5 rounded-full', c.dot)} />
       {STATUS_ENTREVISTA_LABEL[status]}
     </Badge>
+  )
+}
+
+function PerguntasPropostas({ entrevistaId }: { entrevistaId: string }) {
+  const { perguntas, addPergunta, updatePergunta, deletePergunta } = useEntrevistaPerguntas(entrevistaId)
+  const [nova, setNova] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingTexto, setEditingTexto] = useState('')
+
+  async function handleAdd() {
+    if (!nova.trim()) return
+    await addPergunta(nova.trim())
+    setNova('')
+  }
+
+  function startEdit(id: string, texto: string) {
+    setEditingId(id)
+    setEditingTexto(texto)
+  }
+
+  async function saveEdit() {
+    if (editingId && editingTexto.trim()) await updatePergunta(editingId, { texto: editingTexto.trim() })
+    setEditingId(null)
+  }
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-navy-100 px-4 pb-4 pt-3" onClick={(ev) => ev.stopPropagation()}>
+      <Label className="flex items-center gap-1.5">
+        <HelpCircle size={13} /> Perguntas propostas
+      </Label>
+
+      <div className="flex flex-col gap-1.5">
+        {perguntas.map((p) =>
+          editingId === p.id ? (
+            <div key={p.id} className="flex items-center gap-1.5">
+              <Input
+                autoFocus
+                value={editingTexto}
+                onChange={(ev) => setEditingTexto(ev.target.value)}
+                onKeyDown={(ev) => {
+                  if (ev.key === 'Enter') saveEdit()
+                  if (ev.key === 'Escape') setEditingId(null)
+                }}
+                className="text-sm"
+              />
+              <button onClick={saveEdit} className="shrink-0 rounded-md p-1.5 text-status-concluido hover:bg-status-concluido/10">
+                <Check size={15} />
+              </button>
+              <button onClick={() => setEditingId(null)} className="shrink-0 rounded-md p-1.5 text-navy-700 hover:bg-navy-100">
+                <X size={15} />
+              </button>
+            </div>
+          ) : (
+            <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-navy-50 px-3 py-2 text-sm">
+              <span onClick={() => startEdit(p.id, p.texto)} className="flex-1 cursor-pointer text-navy-950 hover:underline">
+                {p.texto}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => updatePergunta(p.id, { status: p.status === 'aprovada' ? 'pendente' : 'aprovada' })}
+                  className={cn(
+                    'rounded-md px-2 py-1 text-xs font-semibold transition-colors',
+                    p.status === 'aprovada'
+                      ? 'bg-status-concluido text-white'
+                      : 'bg-status-concluido/10 text-status-concluido hover:bg-status-concluido/20',
+                  )}
+                >
+                  Aprovado
+                </button>
+                <button
+                  onClick={() => updatePergunta(p.id, { status: p.status === 'reprovada' ? 'pendente' : 'reprovada' })}
+                  className={cn(
+                    'rounded-md px-2 py-1 text-xs font-semibold transition-colors',
+                    p.status === 'reprovada'
+                      ? 'bg-status-devolvido text-white'
+                      : 'bg-status-devolvido/10 text-status-devolvido hover:bg-status-devolvido/20',
+                  )}
+                >
+                  Reprovado
+                </button>
+                <button
+                  onClick={() => deletePergunta(p.id)}
+                  className="shrink-0 rounded-md p-1 text-navy-700/50 hover:bg-navy-100"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            </div>
+          ),
+        )}
+        {perguntas.length === 0 && <p className="text-sm text-navy-700/60">Nenhuma pergunta proposta ainda.</p>}
+      </div>
+
+      <div className="flex gap-2">
+        <Input
+          placeholder="ex: Como a diretoria vê o tema de diversidade?"
+          value={nova}
+          onChange={(ev) => setNova(ev.target.value)}
+          onKeyDown={(ev) => ev.key === 'Enter' && handleAdd()}
+          className="text-sm"
+        />
+        <Button size="sm" variant="outline" onClick={handleAdd} disabled={!nova.trim()}>
+          <Plus size={14} /> Adicionar
+        </Button>
+      </div>
+    </div>
   )
 }
 
@@ -226,10 +333,15 @@ export function EntrevistasPage() {
                   </div>
                 </div>
 
-                {aberto && e.notas && (
-                  <div className="border-t border-navy-100 px-4 pb-4 pt-3">
-                    <p className="text-sm text-navy-950">{e.notas}</p>
-                  </div>
+                {aberto && (
+                  <>
+                    {e.notas && (
+                      <div className="border-t border-navy-100 px-4 pb-4 pt-3">
+                        <p className="text-sm text-navy-950">{e.notas}</p>
+                      </div>
+                    )}
+                    <PerguntasPropostas entrevistaId={e.id} />
+                  </>
                 )}
               </Card>
             )

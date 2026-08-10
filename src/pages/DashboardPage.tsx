@@ -10,6 +10,7 @@ import { useIndicadorCapitulos } from '@/hooks/useIndicadorCapitulos'
 import { useEntrevistas } from '@/hooks/useEntrevistas'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
+import { StatusStackedBar, StatusLegend } from '@/components/domain/StatusStackedBar'
 import {
   STATUS_ORDER,
   STATUS_COLOR,
@@ -21,6 +22,7 @@ import {
 } from '@/lib/domain'
 import { calcularProgressoGeral } from '@/lib/progress'
 import { cn } from '@/lib/utils'
+import type { Indicador, StatusIndicador } from '@/types/db'
 
 export function DashboardPage() {
   const { indicadores } = useIndicadores()
@@ -47,19 +49,23 @@ export function DashboardPage() {
     return base
   }, [indicadores])
 
+  function contarPorStatus(lista: Indicador[]): Record<StatusIndicador, number> {
+    const counts = Object.fromEntries(STATUS_ORDER.map((s) => [s, 0])) as Record<StatusIndicador, number>
+    for (const i of lista) counts[i.status]++
+    return counts
+  }
+
   const resumoPorRespondente = useMemo(() => {
-    const contagem = new Map<string, { total: number; preenchidos: number }>()
+    const contagem = new Map<string, Indicador[]>()
     for (const ind of indicadores) {
       for (const rid of respondenteIdsDoIndicador(ind.id)) {
-        const atual = contagem.get(rid) ?? { total: 0, preenchidos: 0 }
-        atual.total++
-        if (STATUS_PREENCHIDO.includes(ind.status)) atual.preenchidos++
+        const atual = contagem.get(rid) ?? []
+        atual.push(ind)
         contagem.set(rid, atual)
       }
     }
-    const maxTotal = Math.max(1, ...Array.from(contagem.values()).map((c) => c.total))
     return Array.from(contagem.entries())
-      .map(([id, c]) => ({ nome: respondenteNomePorId.get(id) ?? '—', maxTotal, ...c }))
+      .map(([id, lista]) => ({ nome: respondenteNomePorId.get(id) ?? '—', total: lista.length, counts: contarPorStatus(lista) }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 8)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,14 +83,14 @@ export function DashboardPage() {
   }, [capitulos, indicadores, indicadorIdsDoCapitulo])
 
   const resumoPorArea = useMemo(() => {
-    const semArea = indicadores.filter((i) => !i.area_id).length
+    const semArea = indicadores.filter((i) => !i.area_id)
     const porArea = areas.map((a) => {
       const doArea = indicadores.filter((i) => i.area_id === a.id)
-      const preenchidos = doArea.filter((i) => STATUS_PREENCHIDO.includes(i.status)).length
-      return { nome: a.nome, total: doArea.length, preenchidos }
+      return { nome: a.nome, total: doArea.length, counts: contarPorStatus(doArea) }
     })
-    if (semArea > 0) porArea.push({ nome: 'Sem área definida', total: semArea, preenchidos: 0 })
+    if (semArea.length > 0) porArea.push({ nome: 'Sem área definida', total: semArea.length, counts: contarPorStatus(semArea) })
     return porArea
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [indicadores, areas])
 
   return (
@@ -183,18 +189,20 @@ export function DashboardPage() {
             {resumoPorRespondente.length === 0 ? (
               <p className="text-sm text-navy-700/60">Nenhum respondente com indicador atribuído ainda.</p>
             ) : (
-              resumoPorRespondente.map((r) => (
-                <div key={r.nome}>
-                  <div className="mb-1 flex justify-between text-xs font-semibold text-navy-950">
-                    <span>{r.nome}</span>
-                    <span className="text-navy-700/60">
-                      {r.total} indicador{r.total === 1 ? '' : 'es'} · {r.preenchidos} preenchido
-                      {r.preenchidos === 1 ? '' : 's'}
-                    </span>
+              <>
+                <StatusLegend />
+                {resumoPorRespondente.map((r) => (
+                  <div key={r.nome}>
+                    <div className="mb-1 flex justify-between text-xs font-semibold text-navy-950">
+                      <span>{r.nome}</span>
+                      <span className="text-navy-700/60">
+                        {r.total} indicador{r.total === 1 ? '' : 'es'}
+                      </span>
+                    </div>
+                    <StatusStackedBar counts={r.counts} />
                   </div>
-                  <ProgressBar value={(r.total / r.maxTotal) * 100} className="h-1.5" />
-                </div>
-              ))
+                ))}
+              </>
             )}
           </CardContent>
         </Card>
@@ -209,17 +217,20 @@ export function DashboardPage() {
             {resumoPorArea.length === 0 ? (
               <p className="text-sm text-navy-700/60">Nenhuma área cadastrada ainda.</p>
             ) : (
-              resumoPorArea.map((a) => (
-                <div key={a.nome}>
-                  <div className="mb-1 flex justify-between text-xs font-semibold text-navy-950">
-                    <span>{a.nome}</span>
-                    <span className="text-navy-700/60">
-                      {a.preenchidos}/{a.total}
-                    </span>
+              <>
+                <StatusLegend />
+                {resumoPorArea.map((a) => (
+                  <div key={a.nome}>
+                    <div className="mb-1 flex justify-between text-xs font-semibold text-navy-950">
+                      <span>{a.nome}</span>
+                      <span className="text-navy-700/60">
+                        {a.total} indicador{a.total === 1 ? '' : 'es'}
+                      </span>
+                    </div>
+                    <StatusStackedBar counts={a.counts} />
                   </div>
-                  <ProgressBar value={a.total ? (a.preenchidos / a.total) * 100 : 0} className="h-1.5" />
-                </div>
-              ))
+                ))}
+              </>
             )}
           </CardContent>
         </Card>

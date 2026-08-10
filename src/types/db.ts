@@ -157,6 +157,17 @@ export type EntrevistaCapitulo = {
   created_at: string
 }
 
+export type StatusEntrevistaPergunta = 'pendente' | 'aprovada' | 'reprovada'
+
+export type EntrevistaPergunta = {
+  id: string
+  entrevista_id: string
+  texto: string
+  status: StatusEntrevistaPergunta
+  ordem: number | null
+  created_at: string
+}
+
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '13.0.5'
@@ -263,6 +274,12 @@ export type Database = {
         Row: EntrevistaCapitulo
         Insert: Partial<EntrevistaCapitulo> & { entrevista_id: string; capitulo_id: string }
         Update: Partial<EntrevistaCapitulo>
+        Relationships: []
+      }
+      entrevista_perguntas: {
+        Row: EntrevistaPergunta
+        Insert: Partial<EntrevistaPergunta> & { entrevista_id: string; texto: string }
+        Update: Partial<EntrevistaPergunta>
         Relationships: []
       }
     }
