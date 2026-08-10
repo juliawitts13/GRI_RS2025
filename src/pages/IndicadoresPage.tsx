@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Plus, Search, Upload, ClipboardList, Pencil, Trash2, Users, X, ChevronDown, ChevronUp, LayoutGrid, List } from 'lucide-react'
+import { Plus, Search, Upload, ClipboardList, Pencil, Trash2, Users, X, LayoutGrid, List } from 'lucide-react'
 import { useIndicadores } from '@/hooks/useIndicadores'
 import { useAreas } from '@/hooks/useAreas'
 import { useRespondentes } from '@/hooks/useRespondentes'
@@ -87,7 +87,6 @@ export function IndicadoresPage() {
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
 
   const [visao, setVisao] = useState<'normas' | 'lista'>(statusInicial ? 'lista' : 'normas')
-  const [categoriaAberta, setCategoriaAberta] = useState<CategoriaNorma | null>('tematicas')
   const [normaSelecionada, setNormaSelecionada] = useState<number | null>(null)
 
   const areaNomePorId = useMemo(() => new Map(areas.map((a) => [a.id, a.nome])), [areas])
@@ -128,11 +127,6 @@ export function IndicadoresPage() {
     return mapa
   }, [filtrados])
 
-  function toggleCategoria(categoria: CategoriaNorma) {
-    setCategoriaAberta((prev) => (prev === categoria ? null : categoria))
-    setNormaSelecionada(null)
-  }
-
   const todosFiltradosSelecionados = filtrados.length > 0 && filtrados.every((i) => selecionados.has(i.id))
 
   function toggleSelecionado(id: string) {
@@ -166,6 +160,14 @@ export function IndicadoresPage() {
     setEditing(ind)
     setFormOpen(true)
   }
+
+  useEffect(() => {
+    const abrirId = searchParams.get('abrir')
+    if (!abrirId) return
+    const ind = indicadores.find((i) => i.id === abrirId)
+    if (ind) openEdit(ind)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, indicadores])
 
   async function handleSave(
     input: Parameters<typeof createIndicador>[0],
@@ -311,80 +313,64 @@ export function IndicadoresPage() {
       ) : filtrados.length === 0 ? (
         <EmptyState title="Nenhum indicador corresponde aos filtros" description="Tente ajustar os filtros aplicados." />
       ) : visao === 'normas' ? (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {CATEGORIA_ORDER.map((categoria) => {
             const normas = porCategoria[categoria]
             const totalCategoria = Array.from(normas.values()).reduce((acc, itens) => acc + itens.length, 0)
-            const aberta = categoriaAberta === categoria
             const normasOrdenadas = Array.from(normas.keys()).sort((a, b) => a - b)
 
             return (
-              <Card key={categoria} className="overflow-hidden">
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => toggleCategoria(categoria)}
-                  onKeyDown={(e) => e.key === 'Enter' && toggleCategoria(categoria)}
-                  className="flex w-full cursor-pointer items-center justify-between gap-3 p-4 text-left"
-                >
-                  <div>
-                    <p className="text-sm font-bold text-navy-950">{CATEGORIA_INFO[categoria].nome}</p>
-                    <p className="text-xs text-navy-700/60">
-                      {totalCategoria} indicador{totalCategoria === 1 ? '' : 'es'} · {normas.size} norma
-                      {normas.size === 1 ? '' : 's'}
-                    </p>
+              <Card key={categoria} className="flex flex-col p-4">
+                <p className="text-sm font-bold text-navy-950">{CATEGORIA_INFO[categoria].nome}</p>
+                <p className="mb-1 text-xs text-navy-700/60">
+                  {totalCategoria} indicador{totalCategoria === 1 ? '' : 'es'} · {normas.size} norma
+                  {normas.size === 1 ? '' : 's'}
+                </p>
+                <p className="mb-3 text-xs text-navy-700/60">{CATEGORIA_INFO[categoria].legenda}</p>
+
+                {normasOrdenadas.length === 0 ? (
+                  <p className="text-sm text-navy-700/60">Nenhum indicador nesta categoria ainda.</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    {normasOrdenadas.map((norma) => {
+                      const itens = normas.get(norma)!
+                      const selecionada = normaSelecionada === norma
+                      return (
+                        <button
+                          key={norma}
+                          onClick={() => setNormaSelecionada(selecionada ? null : norma)}
+                          className={cn(
+                            'rounded-lg border p-3 text-left transition-colors',
+                            selecionada ? 'border-orange-500 bg-orange-50' : 'border-navy-100 hover:bg-navy-50',
+                          )}
+                        >
+                          <p className="font-mono text-sm font-bold text-navy-950">GRI {norma}</p>
+                          <p className="text-xs text-navy-700/60">
+                            {itens.length} indicador{itens.length === 1 ? '' : 'es'}
+                          </p>
+                        </button>
+                      )
+                    })}
                   </div>
-                  {aberta ? <ChevronUp size={18} className="text-navy-700/50" /> : <ChevronDown size={18} className="text-navy-700/50" />}
-                </div>
+                )}
 
-                {aberta && (
-                  <div className="border-t border-navy-100 px-4 pb-5 pt-4">
-                    <p className="mb-3 text-xs text-navy-700/60">{CATEGORIA_INFO[categoria].legenda}</p>
-                    {normasOrdenadas.length === 0 ? (
-                      <p className="text-sm text-navy-700/60">Nenhum indicador nesta categoria ainda.</p>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-                        {normasOrdenadas.map((norma) => {
-                          const itens = normas.get(norma)!
-                          const selecionada = normaSelecionada === norma
-                          return (
-                            <button
-                              key={norma}
-                              onClick={() => setNormaSelecionada(selecionada ? null : norma)}
-                              className={cn(
-                                'rounded-lg border p-3 text-left transition-colors',
-                                selecionada ? 'border-orange-500 bg-orange-50' : 'border-navy-100 hover:bg-navy-50',
-                              )}
-                            >
-                              <p className="font-mono text-sm font-bold text-navy-950">GRI {norma}</p>
-                              <p className="text-xs text-navy-700/60">
-                                {itens.length} indicador{itens.length === 1 ? '' : 'es'}
-                              </p>
-                            </button>
-                          )
-                        })}
+                {normaSelecionada !== null && normas.has(normaSelecionada) && (
+                  <div className="mt-4 flex flex-col gap-1.5 border-t border-navy-100 pt-4">
+                    {normas.get(normaSelecionada)!.map((ind) => (
+                      <div
+                        key={ind.id}
+                        onClick={() => openEdit(ind)}
+                        className="flex cursor-pointer flex-col gap-1 rounded-lg bg-navy-50 px-3 py-2 text-sm hover:bg-navy-100"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-md bg-navy-900 px-2 py-0.5 font-mono text-xs font-bold text-white">
+                            {ind.codigo_gri}
+                          </span>
+                          <span className="font-medium text-navy-950">{ind.titulo}</span>
+                        </div>
+                        <StatusBadge status={ind.status} />
                       </div>
-                    )}
-
-                    {normaSelecionada !== null && normas.has(normaSelecionada) && (
-                      <div className="mt-4 flex flex-col gap-1.5 border-t border-navy-100 pt-4">
-                        {normas.get(normaSelecionada)!.map((ind) => (
-                          <div
-                            key={ind.id}
-                            onClick={() => openEdit(ind)}
-                            className="flex cursor-pointer items-center justify-between gap-2 rounded-lg bg-navy-50 px-3 py-2 text-sm hover:bg-navy-100"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="rounded-md bg-navy-900 px-2 py-0.5 font-mono text-xs font-bold text-white">
-                                {ind.codigo_gri}
-                              </span>
-                              <span className="font-medium text-navy-950">{ind.titulo}</span>
-                            </div>
-                            <StatusBadge status={ind.status} />
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </Card>

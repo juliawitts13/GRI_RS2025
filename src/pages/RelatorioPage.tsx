@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Plus, Trash2, Pencil, BookOpen, ChevronDown, ChevronUp, Check, X } from 'lucide-react'
 import { useCapitulos } from '@/hooks/useCapitulos'
 import { useIndicadorCapitulos } from '@/hooks/useIndicadorCapitulos'
@@ -114,7 +115,7 @@ function TopicosDoCapitulo({
 
 export function RelatorioPage() {
   const { capitulos, loading, createCapitulo, updateCapitulo, deleteCapitulo } = useCapitulos()
-  const { indicadorIdsDoCapitulo, definirIndicadoresDoCapitulo } = useIndicadorCapitulos()
+  const { indicadorIdsDoCapitulo } = useIndicadorCapitulos()
   const { indicadores } = useIndicadores()
   const { temas } = useTemasMateriais()
   const { temaIdsDoCapitulo, definirTemasDoCapitulo } = useCapituloTemasMateriais()
@@ -128,7 +129,6 @@ export function RelatorioPage() {
   const [ordem, setOrdem] = useState('')
   const [saving, setSaving] = useState(false)
   const [expandido, setExpandido] = useState<string | null>(null)
-  const [buscaIndicador, setBuscaIndicador] = useState('')
 
   const indicadorPorId = useMemo(() => new Map(indicadores.map((i) => [i.id, i])), [indicadores])
 
@@ -159,12 +159,6 @@ export function RelatorioPage() {
     setDialogOpen(false)
   }
 
-  function toggleIndicador(cap: Capitulo, indicadorId: string) {
-    const atuais = indicadorIdsDoCapitulo(cap.id)
-    const proximos = atuais.includes(indicadorId) ? atuais.filter((id) => id !== indicadorId) : [...atuais, indicadorId]
-    definirIndicadoresDoCapitulo(cap.id, proximos)
-  }
-
   function toggleTema(cap: Capitulo, temaId: string) {
     const atuais = temaIdsDoCapitulo(cap.id)
     const proximos = atuais.includes(temaId) ? atuais.filter((id) => id !== temaId) : [...atuais, temaId]
@@ -185,8 +179,8 @@ export function RelatorioPage() {
         <div>
           <h1 className="text-2xl font-extrabold text-navy-950">Relatório</h1>
           <p className="text-sm text-navy-700/70">
-            Capítulos do relatório: quais indicadores GRI, temas materiais e tópicos cada um aborda. Clique em um
-            capítulo para editar tudo diretamente.
+            Capítulos do relatório e o que cada um aborda. Os indicadores GRI refletem o que foi classificado em
+            GRI — clique num indicador para ver status e andamento.
           </p>
         </div>
         <Button onClick={openCreate}>
@@ -217,13 +211,6 @@ export function RelatorioPage() {
             const aberto = expandido === cap.id
             const idsTemas = temaIdsDoCapitulo(cap.id)
             const temasDoCapitulo = idsTemas.map((id) => temas.find((t) => t.id === id)).filter((t): t is TemaMaterial => !!t)
-            const indicadoresFiltrados = buscaIndicador
-              ? indicadores.filter(
-                  (i) =>
-                    i.codigo_gri.toLowerCase().includes(buscaIndicador.toLowerCase()) ||
-                    i.titulo.toLowerCase().includes(buscaIndicador.toLowerCase()),
-                )
-              : indicadores
 
             return (
               <Card key={cap.id} className="overflow-hidden">
@@ -274,35 +261,34 @@ export function RelatorioPage() {
                 {aberto && (
                   <div className="flex flex-col gap-5 border-t border-navy-100 px-4 pb-5 pt-4">
                     <div>
-                      <Label>Indicadores GRI deste capítulo (pode selecionar mais de um)</Label>
-                      <Input
-                        placeholder="Filtrar por código ou título..."
-                        value={buscaIndicador}
-                        onChange={(e) => setBuscaIndicador(e.target.value)}
-                        className="mb-2 text-sm"
-                      />
-                      <div className="flex max-h-56 flex-col gap-1 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
-                        {indicadoresFiltrados.length === 0 ? (
-                          <p className="text-sm text-navy-700/60">Nenhum indicador encontrado.</p>
-                        ) : (
-                          indicadoresFiltrados.map((ind) => (
-                            <label key={ind.id} className="flex items-center justify-between gap-2 rounded-md px-1.5 py-1 text-sm text-navy-950 hover:bg-navy-50">
+                      <Label>Indicadores GRI deste capítulo</Label>
+                      <p className="mb-2 text-xs text-navy-700/60">
+                        Reflete o que foi classificado em cada indicador, na aba GRI. Clique num indicador para ver o
+                        status e andamento.
+                      </p>
+                      {indicadoresDoCapitulo.length === 0 ? (
+                        <p className="text-sm text-navy-700/60">
+                          Nenhum indicador classificado neste capítulo ainda — classifique em GRI.
+                        </p>
+                      ) : (
+                        <div className="flex max-h-56 flex-col gap-1 overflow-y-auto rounded-lg border border-navy-100 p-2.5">
+                          {indicadoresDoCapitulo.map((ind) => (
+                            <Link
+                              key={ind.id}
+                              to={`/indicadores?abrir=${ind.id}`}
+                              className="flex items-center justify-between gap-2 rounded-md px-1.5 py-1.5 text-sm text-navy-950 hover:bg-navy-50"
+                            >
                               <span className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={idsIndicadores.includes(ind.id)}
-                                  onChange={() => toggleIndicador(cap, ind.id)}
-                                />
                                 <span className="rounded-md bg-navy-900 px-1.5 py-0.5 font-mono text-[11px] font-bold text-white">
                                   {ind.codigo_gri}
                                 </span>
                                 {ind.titulo}
                               </span>
                               <StatusBadge status={ind.status} />
-                            </label>
-                          ))
-                        )}
-                      </div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div>

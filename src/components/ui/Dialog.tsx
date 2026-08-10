@@ -7,10 +7,12 @@ export function Dialog({
   open,
   onOpenChange,
   children,
+  widthClassName = 'w-[min(560px,92vw)]',
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   children: ReactNode
+  widthClassName?: string
 }) {
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
@@ -18,8 +20,9 @@ export function Dialog({
         <RadixDialog.Overlay className="fixed inset-0 z-40 bg-navy-950/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in" />
         <RadixDialog.Content
           className={cn(
-            'fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[min(560px,92vw)] -translate-x-1/2 -translate-y-1/2',
+            'fixed left-1/2 top-1/2 z-50 max-h-[90vh] -translate-x-1/2 -translate-y-1/2',
             'overflow-y-auto rounded-card bg-white p-6 shadow-xl focus:outline-none',
+            widthClassName,
           )}
         >
           {children}

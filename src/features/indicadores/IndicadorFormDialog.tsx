@@ -106,11 +106,20 @@ function ChecklistPerguntas({
   const [nova, setNova] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTexto, setEditingTexto] = useState('')
+  const [respondenteEmMassa, setRespondenteEmMassa] = useState('')
+  const [aplicandoEmMassa, setAplicandoEmMassa] = useState(false)
 
   async function handleAdd() {
     if (!nova.trim()) return
     await addPergunta(nova.trim())
     setNova('')
+  }
+
+  async function handleAplicarEmMassa() {
+    if (perguntas.length === 0) return
+    setAplicandoEmMassa(true)
+    await Promise.all(perguntas.map((p) => updatePergunta(p.id, { respondente_id: respondenteEmMassa || null })))
+    setAplicandoEmMassa(false)
   }
 
   function startEdit(id: string, texto: string) {
@@ -135,6 +144,27 @@ function ChecklistPerguntas({
           </span>
         )}
       </Label>
+
+      {perguntas.length > 0 && (
+        <div className="flex items-center gap-2 rounded-lg bg-navy-50 p-2.5">
+          <Select
+            value={respondenteEmMassa}
+            onChange={(e) => setRespondenteEmMassa(e.target.value)}
+            className="h-8 flex-1 py-0 text-xs"
+            disabled={respondentesDoIndicador.length === 0}
+          >
+            <option value="">Marcar todas com: sem responsável definido</option>
+            {respondentesDoIndicador.map((r) => (
+              <option key={r.id} value={r.id}>
+                Marcar todas com: {r.nome}
+              </option>
+            ))}
+          </Select>
+          <Button size="sm" variant="outline" onClick={handleAplicarEmMassa} disabled={aplicandoEmMassa}>
+            {aplicandoEmMassa ? 'Aplicando...' : 'Aplicar a todas'}
+          </Button>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1.5">
         {perguntas.map((p) =>
@@ -299,7 +329,7 @@ export function IndicadorFormDialog({
   const abasVisiveis = editing ? ABAS : ABAS.filter((a) => a.key !== 'indicador')
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} widthClassName="w-[min(900px,95vw)]">
       <DialogTitle>{editing ? `${editing.codigo_gri} — ${editing.titulo}` : 'Novo indicador'}</DialogTitle>
 
       <div className="mb-4 flex flex-wrap gap-1 rounded-lg border border-navy-100 p-1">
