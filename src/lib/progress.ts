@@ -1,15 +1,17 @@
+import { STATUS_ENTREVISTA_PROGRESSO_PESO, STATUS_PROGRESSO_PESO } from './domain'
 import type { Entrevista, Indicador } from '@/types/db'
 
 /**
- * Progresso geral = % de indicadores concluídos + entrevistas realizadas, sobre o total combinado.
- * Decisão de negócio confirmada com a Júlia após remover o módulo de Cronograma.
+ * Progresso geral = média ponderada do status de cada indicador + entrevista, sobre o total
+ * combinado. Um indicador em validação da consultoria já avançou bastante mesmo sem estar
+ * concluído, então pesa mais que "em andamento" mas menos que "concluído" — ver STATUS_PROGRESSO_PESO.
  */
 export function calcularProgressoGeral(indicadores: Indicador[], entrevistas: Entrevista[] = []): number {
   const total = indicadores.length + entrevistas.length
   if (total === 0) return 0
-  const concluidos = indicadores.filter((i) => i.status === 'concluido').length
-  const realizadas = entrevistas.filter((e) => e.status === 'realizada').length
-  return Math.round(((concluidos + realizadas) / total) * 100)
+  const pesoIndicadores = indicadores.reduce((acc, i) => acc + STATUS_PROGRESSO_PESO[i.status], 0)
+  const pesoEntrevistas = entrevistas.reduce((acc, e) => acc + STATUS_ENTREVISTA_PROGRESSO_PESO[e.status], 0)
+  return Math.round(((pesoIndicadores + pesoEntrevistas) / total) * 100)
 }
 
 export function formatarDataBr(iso: string | null | undefined): string {

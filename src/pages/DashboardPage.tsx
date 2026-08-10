@@ -106,9 +106,9 @@ export function DashboardPage() {
             <p className="text-sm font-semibold uppercase tracking-wide text-orange-500">Progresso geral</p>
             <p className="text-4xl font-extrabold md:text-5xl">{progresso}%</p>
           </div>
-          <p className="text-right text-xs text-white/60">
-            {contagemStatus.concluido + contagemEntrevistas.realizada} de {indicadores.length + entrevistas.length}{' '}
-            itens concluídos (indicadores + entrevistas)
+          <p className="max-w-xs text-right text-xs text-white/60">
+            Pondera o status de cada indicador e entrevista — um item em validação da consultoria já conta como
+            progresso, mesmo sem estar concluído.
           </p>
         </div>
         <ProgressBar value={progresso} trackClassName="bg-white/15" className="h-4" />

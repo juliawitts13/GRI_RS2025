@@ -27,6 +27,18 @@ export const STATUS_COLOR: Record<StatusIndicador, { bg: string; text: string; d
 /** Status que contam como "preenchido" pela área para fins de progresso, mesmo sem estar concluído. */
 export const STATUS_PREENCHIDO: StatusIndicador[] = ['aguardando_validacao', 'concluido']
 
+/**
+ * Peso de cada status na barra de progresso geral (0 a 1) — um indicador em validação da
+ * consultoria já avançou bastante, mesmo sem estar concluído, então não deve contar como 0%.
+ */
+export const STATUS_PROGRESSO_PESO: Record<StatusIndicador, number> = {
+  nao_iniciado: 0,
+  em_andamento: 0.4,
+  devolvido_area: 0.4,
+  aguardando_validacao: 0.8,
+  concluido: 1,
+}
+
 export const STATUS_PROJETO_ORDER: StatusProjeto[] = ['nao_iniciado', 'em_andamento', 'concluido']
 
 export const STATUS_PROJETO_LABEL: Record<StatusProjeto, string> = {
@@ -53,6 +65,13 @@ export const STATUS_ENTREVISTA_COLOR: Record<StatusEntrevista, { bg: string; tex
   pendente: { bg: 'bg-status-nao-iniciado/10', text: 'text-status-nao-iniciado', dot: 'bg-status-nao-iniciado' },
   agendada: { bg: 'bg-status-aguardando/10', text: 'text-status-aguardando', dot: 'bg-status-aguardando' },
   realizada: { bg: 'bg-status-concluido/10', text: 'text-status-concluido', dot: 'bg-status-concluido' },
+}
+
+/** Peso de cada status de entrevista na barra de progresso geral (0 a 1). */
+export const STATUS_ENTREVISTA_PROGRESSO_PESO: Record<StatusEntrevista, number> = {
+  pendente: 0,
+  agendada: 0.5,
+  realizada: 1,
 }
 
 export const PILAR_LABEL: Record<Pilar, string> = {
